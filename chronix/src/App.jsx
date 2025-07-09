@@ -1,19 +1,18 @@
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/home";
-import Settings from "./pages/Settings";
-import About from "./pages/About";
 
-const App = () => {
+
+
+
+export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/about" element={<About />} />
+            
+       
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
-};
-
-export default App;
+}
