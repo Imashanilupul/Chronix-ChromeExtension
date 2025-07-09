@@ -1,33 +1,19 @@
-import { useEffect, useState } from "react";
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Home from "./pages/home";
+import Settings from "./pages/Settings";
+import About from "./pages/About";
 
-function App() {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    chrome.storage.local.get(["visitCount"], (result) => {
-      const value = result.visitCount || 0;
-      setCount(value);
-    });
-  }, []);
-
-  const increment = () => {
-    const newCount = count + 1;
-    chrome.storage.local.set({ visitCount: newCount });
-    setCount(newCount);
-  };
-
+const App = () => {
   return (
-    <div className="p-4 w-64">
-      <h1 className="text-xl font-bold mb-2">Welcome!</h1>
-      <p>You clicked {count} times</p>
-      <button
-        onClick={increment}
-        className="mt-3 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-      >
-        Click Me
-      </button>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/about" element={<About />} />
+      </Routes>
+    </BrowserRouter>
   );
-}
+};
 
 export default App;
