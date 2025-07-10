@@ -1,7 +1,7 @@
 import React from "react";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/home";
-import Graphs from "./pages/graphs";
+import Graphs from "./pages/Graphs";
 import Popup from "./pages/popup";
 
 
