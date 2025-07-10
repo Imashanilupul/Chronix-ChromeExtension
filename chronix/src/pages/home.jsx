@@ -35,18 +35,18 @@ export default function Home() {
       isActive: false,
     },
   ]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime((prev) => prev + 1);
-      setWebsites((prev) =>
-        prev.map((site) =>
-          site.isActive ? { ...site, timeSpent: site.timeSpent + 1 } : site
-        )
-      );
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+useEffect(() => {
+  console.log('Home component mounted, starting interval');
+  const interval = setInterval(() => {
+    setCurrentTime((prev) => prev + 1);
+    setWebsites((prev) =>
+      prev.map((site) =>
+        site.isActive ? { ...site, timeSpent: site.timeSpent + 1 } : site
+      )
+    );
+  }, 1000);
+  return () => clearInterval(interval);
+}, []);
 
   const resetAllData = () => {
     setCurrentTime(0);
