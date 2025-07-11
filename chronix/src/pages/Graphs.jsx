@@ -14,7 +14,6 @@ import {
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function Graphs() {
-  // Sample websites data
   const websites = [
     { domain: "github.com", weekly: [110, 150, 80, 200, 155, 30, 20], monthly: [600, 720, 540, 800] },
     { domain: "stackoverflow.com", weekly: [60, 80, 40, 100, 90, 10, 5], monthly: [300, 350, 200, 400] },
@@ -26,10 +25,8 @@ export default function Graphs() {
   const [period, setPeriod] = useState('weekly');
   const [selectedDomain, setSelectedDomain] = useState(websites[0].domain);
 
-  // Find selected website data
   const selectedWebsite = websites.find(site => site.domain === selectedDomain);
 
-  // Chart data
   const chartData = {
     labels: period === 'weekly'
       ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -38,8 +35,8 @@ export default function Graphs() {
       {
         label: 'Time Spent (minutes)',
         data: period === 'weekly' ? selectedWebsite.weekly : selectedWebsite.monthly,
-        backgroundColor: period === 'weekly' ? '#3b82f6' : '#f59e42',
-        borderColor: period === 'weekly' ? '#1e40af' : '#b45309',
+        backgroundColor: period === 'weekly' ? '#60a5fa' : '#fb923c',
+        borderColor: period === 'weekly' ? '#2563eb' : '#ea580c',
         borderWidth: 1,
         borderRadius: 4,
         barPercentage: 0.7,
@@ -57,19 +54,18 @@ export default function Graphs() {
     scales: {
       y: {
         beginAtZero: true,
-        title: { display: true, text: 'Time (minutes)', color: '#374151' },
-        ticks: { color: '#374151' },
-        grid: { color: '#d1d5db' },
+        title: { display: true, text: 'Time (minutes)', color: '#111827' },
+        ticks: { color: '#111827' },
+        grid: { color: '#e5e7eb' },
       },
       x: {
-        title: { display: true, text: period === 'weekly' ? 'Days' : 'Weeks', color: '#374151' },
-        ticks: { color: '#374151' },
-        grid: { color: '#d1d5db' },
+        title: { display: true, text: period === 'weekly' ? 'Days' : 'Weeks', color: '#111827' },
+        ticks: { color: '#111827' },
+        grid: { color: '#e5e7eb' },
       },
     },
   };
 
-  // Calculate stats
   const total = (period === 'weekly'
     ? selectedWebsite.weekly.reduce((a, b) => a + b, 0)
     : selectedWebsite.monthly.reduce((a, b) => a + b, 0)
@@ -79,7 +75,6 @@ export default function Graphs() {
     : Math.round(total / 28)
   );
 
-  // Format time helper
   const formatTime = (minutes) => {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
@@ -87,18 +82,24 @@ export default function Graphs() {
   };
 
   return (
-    <div className="w-80 h-auto p-4 font-sans text-sm text-white bg-gray-900 overflow-hidden">
+    <div className="w-80 h-auto p-4 font-sans text-sm text-gray-900 bg-white border border-gray-300 rounded-lg shadow">
       {/* Header */}
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-xl font-bold">📊 Analytics</h2>
-        <Link to="/home" className="text-blue-400 hover:underline text-lg">⬅️</Link>
+        <Link
+          to="/home"
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-lg font-medium text-blue-600 rounded hover:bg-blue-50 hover:underline transition"
+        >
+          ⬅️
+        </Link>
+
       </div>
 
       {/* Select Website */}
       <div className="mb-4">
         <label className="block text-xs mb-1">Select Website:</label>
         <select
-          className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white"
+          className="w-full p-2 bg-white border border-gray-300 rounded text-gray-800"
           value={selectedDomain}
           onChange={e => setSelectedDomain(e.target.value)}
         >
@@ -113,21 +114,19 @@ export default function Graphs() {
       {/* Time Period Buttons */}
       <div className="mb-4 flex space-x-2">
         <button
-          className={`flex-1 p-2 border rounded text-white font-bold ${
-            period === 'weekly'
-              ? 'bg-gray-800 border-gray-700'
-              : 'bg-gray-700 border-gray-700 opacity-60'
-          }`}
+          className={`flex-1 p-2 border rounded font-bold ${period === 'weekly'
+              ? 'bg-blue-100 border-blue-400 text-blue-800'
+              : 'bg-gray-100 border-gray-300 text-gray-500'
+            }`}
           onClick={() => setPeriod('weekly')}
         >
           Weekly
         </button>
         <button
-          className={`flex-1 p-2 border rounded text-white font-bold ${
-            period === 'monthly'
-              ? 'bg-gray-800 border-gray-700'
-              : 'bg-gray-700 border-gray-700 opacity-60'
-          }`}
+          className={`flex-1 p-2 border rounded font-bold ${period === 'monthly'
+              ? 'bg-orange-100 border-orange-400 text-orange-800'
+              : 'bg-gray-100 border-gray-300 text-gray-500'
+            }`}
           onClick={() => setPeriod('monthly')}
         >
           Monthly
@@ -136,19 +135,19 @@ export default function Graphs() {
 
       {/* Time Statistics */}
       <div className="mb-4 flex space-x-2">
-        <div className="flex-1 p-2 bg-gray-800 border border-gray-700 rounded text-center">
+        <div className="flex-1 p-2 bg-gray-100 border border-gray-300 rounded text-center">
           <div className="text-xs">{period === 'weekly' ? 'Total' : 'Total'}</div>
-          <div className="text-lg">{formatTime(total)}</div>
+          <div className="text-lg font-semibold">{formatTime(total)}</div>
         </div>
-        <div className="flex-1 p-2 bg-gray-700 border border-gray-700 rounded text-center">
+        <div className="flex-1 p-2 bg-gray-50 border border-gray-300 rounded text-center">
           <div className="text-xs">{period === 'weekly' ? 'Daily Avg' : 'Daily Avg'}</div>
-          <div className="text-lg">{formatTime(avg)}</div>
+          <div className="text-lg font-semibold">{formatTime(avg)}</div>
         </div>
       </div>
 
       {/* Bar Chart */}
-      <div className="bg-gray-800 p-2 rounded border border-gray-700">
-        <div className="text-xs mb-1">
+      <div className="bg-gray-50 p-2 rounded border border-gray-300">
+        <div className="text-xs mb-1 text-gray-500">
           {period === 'weekly' ? 'Last 7 Days' : 'Last 4 Weeks'}
         </div>
         <Bar data={chartData} options={chartOptions} height={180} />

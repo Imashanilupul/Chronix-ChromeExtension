@@ -35,18 +35,18 @@ export default function Home() {
       isActive: false,
     },
   ]);
-useEffect(() => {
-  console.log('Home component mounted, starting interval');
-  const interval = setInterval(() => {
-    setCurrentTime((prev) => prev + 1);
-    setWebsites((prev) =>
-      prev.map((site) =>
-        site.isActive ? { ...site, timeSpent: site.timeSpent + 1 } : site
-      )
-    );
-  }, 1000);
-  return () => clearInterval(interval);
-}, []);
+  useEffect(() => {
+    console.log('Home component mounted, starting interval');
+    const interval = setInterval(() => {
+      setCurrentTime((prev) => prev + 1);
+      setWebsites((prev) =>
+        prev.map((site) =>
+          site.isActive ? { ...site, timeSpent: site.timeSpent + 1 } : site
+        )
+      );
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const resetAllData = () => {
     setCurrentTime(0);
@@ -104,15 +104,14 @@ useEffect(() => {
       </div>
 
       {/* Website List */}
-      <div className="h-28 overflow-y-auto mb-3 space-y-2">
+      <div className="h-auto overflow-y-auto mb-3 space-y-2">
         {websites
           .sort((a, b) => b.timeSpent - a.timeSpent)
           .map((site) => (
             <div
               key={site.domain}
-              className={`flex justify-between items-center px-2 py-1 rounded-md ${
-                site.isActive ? "bg-blue-100" : "bg-gray-100"
-              }`}
+              className={`flex justify-between items-center px-2 py-1 rounded-md ${site.isActive ? "bg-blue-100" : "bg-gray-100"
+                }`}
             >
               <div className="flex items-center gap-2">
                 <img src={site.favicon} alt="" className="w-3 h-3" />
@@ -125,8 +124,19 @@ useEffect(() => {
 
       {/* Footer Links */}
       <div className="flex justify-between text-xs text-blue-600">
-        <Link to="/graphs" className="hover:underline">📊 View Graphs</Link>
-        <Link to="/settings" className="hover:underline">⚙️ Settings</Link>
+        <Link
+          to="/graphs"
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 rounded hover:bg-blue-50 hover:underline transition"
+        >
+          📊 View Graphs
+        </Link>
+        <Link
+          to="/settings"
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 rounded hover:bg-gray-100 hover:underline transition"
+        >
+          ⚙️ Settings
+        </Link>
+
       </div>
     </div>
   );
