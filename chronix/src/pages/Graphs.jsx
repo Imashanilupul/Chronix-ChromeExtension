@@ -86,13 +86,7 @@ export default function Graphs() {
       {/* Header */}
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-xl font-bold">📊 Analytics</h2>
-        <Link
-          to="/home"
-          className="inline-flex items-center gap-2 px-3 py-1.5 text-lg font-medium text-blue-600 rounded hover:bg-blue-50 hover:underline transition"
-        >
-          ⬅️
-        </Link>
-
+        <Link to="/home" className="text-blue-600 hover:underline text-lg">⬅️</Link>
       </div>
 
       {/* Select Website */}
@@ -114,19 +108,21 @@ export default function Graphs() {
       {/* Time Period Buttons */}
       <div className="mb-4 flex space-x-2">
         <button
-          className={`flex-1 p-2 border rounded font-bold ${period === 'weekly'
+          className={`flex-1 p-2 border rounded font-bold ${
+            period === 'weekly'
               ? 'bg-blue-100 border-blue-400 text-blue-800'
               : 'bg-gray-100 border-gray-300 text-gray-500'
-            }`}
+          }`}
           onClick={() => setPeriod('weekly')}
         >
           Weekly
         </button>
         <button
-          className={`flex-1 p-2 border rounded font-bold ${period === 'monthly'
+          className={`flex-1 p-2 border rounded font-bold ${
+            period === 'monthly'
               ? 'bg-orange-100 border-orange-400 text-orange-800'
               : 'bg-gray-100 border-gray-300 text-gray-500'
-            }`}
+          }`}
           onClick={() => setPeriod('monthly')}
         >
           Monthly
