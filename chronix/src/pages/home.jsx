@@ -7,46 +7,66 @@ export default function Home() {
   const [hostname, setHostname] = useState("");
 
   useEffect(() => {
-    // Fetch stored data from chrome.storage.local
-    chrome.storage.local.get(null, (data) => {
-      const formatted = Object.entries(data).map(([domain, timeSpent]) => ({
-        domain,
-        timeSpent,
-        favicon: `https://${domain}/favicon.ico`,
-        isActive: false,
-      }));
+    let activeDomain = "";
+    let baseTime = 0;
 
-      // Get the active tab and mark the site as active
-      chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-        if (!tab || !tab.url) return;
-        const activeDomain = new URL(tab.url).hostname;
-        setHostname(activeDomain);
+    const updateData = () => {
+      chrome.storage.local.get(null, (data) => {
+        chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+          if (!tab || !tab.url) return;
+          const domain = new URL(tab.url).hostname;
+          activeDomain = domain;
+          baseTime = data[domain] || 0;
 
-        const updated = formatted.map((site) =>
-          site.domain === activeDomain ? { ...site, isActive: true } : site
-        );
+          const formatted = Object.entries(data).map(([d, t]) => ({
+            domain: d,
+            timeSpent: t,
+            favicon: `https://${d}/favicon.ico`,
+            isActive: d === domain,
+          }));
 
-        // Add current site if not in list
-        if (!updated.find((s) => s.domain === activeDomain)) {
-          updated.unshift({
-            domain: activeDomain,
-            timeSpent: 0,
-            favicon: `https://${activeDomain}/favicon.ico`,
-            isActive: true,
-          });
-        }
+          if (!formatted.find((s) => s.domain === domain)) {
+            formatted.unshift({
+              domain: domain,
+              timeSpent: baseTime,
+              favicon: `https://${domain}/favicon.ico`,
+              isActive: true,
+            });
+          }
 
-        setWebsites(updated);
+          setWebsites(formatted);
+          setCurrentTime(baseTime);
+          setHostname(domain);
+        });
       });
-    });
+    };
 
-    // Optional: live timer UI update
-    const interval = setInterval(() => {
+    // Initial data fetch
+    updateData();
+
+    // Re-fetch all data every 5s to stay in sync
+    const fetchInterval = setInterval(() => {
+      updateData();
+    }, 5000);
+
+    // Increment current tab timer locally every 1s
+    const liveInterval = setInterval(() => {
       setCurrentTime((prev) => prev + 1);
+      setWebsites((prev) =>
+        prev.map((site) =>
+          site.domain === hostname
+            ? { ...site, timeSpent: site.timeSpent + 1 }
+            : site
+        )
+      );
     }, 1000);
 
-    return () => clearInterval(interval);
-  }, []);
+    // Cleanup function - this runs when component unmounts
+    return () => {
+      clearInterval(fetchInterval);
+      clearInterval(liveInterval);
+    };
+  }, [hostname]); // Add hostname as dependency
 
   const resetAllData = () => {
     chrome.storage.local.clear(() => {
