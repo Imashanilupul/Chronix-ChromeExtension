@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Bar } from 'react-chartjs-2';
 import {
@@ -14,39 +14,97 @@ import {
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function Graphs() {
-  // Sample websites data
-  const websites = [
-    { domain: "github.com", weekly: [110, 150, 80, 200, 155, 30, 20], monthly: [600, 720, 540, 800] },
-    { domain: "stackoverflow.com", weekly: [60, 80, 40, 100, 90, 10, 5], monthly: [300, 350, 200, 400] },
-    { domain: "youtube.com", weekly: [90, 120, 70, 160, 120, 20, 10], monthly: [500, 600, 400, 700] },
-    { domain: "docs.google.com", weekly: [30, 40, 20, 50, 45, 5, 2], monthly: [100, 120, 80, 150] },
-    { domain: "twitter.com", weekly: [20, 30, 10, 40, 25, 2, 1], monthly: [50, 60, 40, 80] },
-  ];
-
+  const [usageData, setUsageData] = useState({});
   const [period, setPeriod] = useState('weekly');
-  const [selectedDomain, setSelectedDomain] = useState(websites[0].domain);
+  const [selectedDomain, setSelectedDomain] = useState('');
+  const [chartData, setChartData] = useState(null);
 
-  // Find selected website data
-  const selectedWebsite = websites.find(site => site.domain === selectedDomain);
+  // Fetch usage data on mount
+  useEffect(() => {
+    chrome.storage.local.get(['usage'], (result) => {
+      const usage = result.usage || {};
+      setUsageData(usage);
 
-  // Chart data
-  const chartData = {
-    labels: period === 'weekly'
-      ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-      : ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-    datasets: [
-      {
-        label: 'Time Spent (minutes)',
-        data: period === 'weekly' ? selectedWebsite.weekly : selectedWebsite.monthly,
-        backgroundColor: period === 'weekly' ? '#3b82f6' : '#f59e42',
-        borderColor: period === 'weekly' ? '#1e40af' : '#b45309',
-        borderWidth: 1,
-        borderRadius: 4,
-        barPercentage: 0.7,
-        categoryPercentage: 0.7,
-      },
-    ],
+      // Auto-select first domain
+      const domainsSet = new Set();
+      Object.values(usage).forEach((dayData) => {
+        Object.keys(dayData).forEach((domain) => domainsSet.add(domain));
+      });
+
+      const domainList = Array.from(domainsSet);
+      if (domainList.length > 0) {
+        setSelectedDomain(domainList[0]);
+      }
+    });
+  }, []);
+
+  // Build chart data based on period + selectedDomain
+  useEffect(() => {
+    if (!selectedDomain || !usageData) return;
+
+    let labels = [];
+    let data = [];
+
+    const today = new Date();
+
+    if (period === 'weekly') {
+      for (let i = 6; i >= 0; i--) {
+        const day = new Date(today);
+        day.setDate(today.getDate() - i);
+        const key = day.toISOString().split('T')[0];
+        const label = day.toLocaleDateString('en-US', { weekday: 'short' });
+
+        labels.push(label);
+        data.push((usageData[key] && usageData[key][selectedDomain]) || 0);
+      }
+    } else {
+      // Monthly: 4 weekly buckets
+      const buckets = [0, 0, 0, 0];
+      Object.entries(usageData).forEach(([dateStr, domains]) => {
+        const date = new Date(dateStr);
+        const diff = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+        const weekIndex = Math.floor(diff / 7);
+        if (weekIndex >= 0 && weekIndex < 4) {
+          buckets[3 - weekIndex] += domains[selectedDomain] || 0;
+        }
+      });
+
+      labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+      data = buckets;
+    }
+
+    const dataset = {
+      labels,
+      datasets: [
+        {
+          label: 'Time Spent (minutes)',
+          data,
+          backgroundColor: period === 'weekly' ? '#3b82f6' : '#f59e42',
+          borderColor: period === 'weekly' ? '#1e40af' : '#b45309',
+          borderWidth: 1,
+          borderRadius: 4,
+          barPercentage: 0.7,
+          categoryPercentage: 0.7,
+        },
+      ],
+    };
+
+    setChartData(dataset);
+  }, [period, selectedDomain, usageData]);
+
+  // Format time
+  const formatTime = (minutes) => {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
   };
+
+  const total =
+    chartData?.datasets[0].data.reduce((acc, val) => acc + val, 0) || 0;
+
+  const avg = period === 'weekly'
+    ? Math.round(total / 7)
+    : Math.round(total / 28);
 
   const chartOptions = {
     responsive: true,
@@ -57,33 +115,20 @@ export default function Graphs() {
     scales: {
       y: {
         beginAtZero: true,
-        title: { display: true, text: 'Time (minutes)', color: '#374151' },
-        ticks: { color: '#374151' },
-        grid: { color: '#d1d5db' },
+        title: { display: true, text: 'Time (minutes)', color: '#d1d5db' },
+        ticks: { color: '#d1d5db' },
+        grid: { color: '#374151' },
       },
       x: {
-        title: { display: true, text: period === 'weekly' ? 'Days' : 'Weeks', color: '#374151' },
-        ticks: { color: '#374151' },
-        grid: { color: '#d1d5db' },
+        title: {
+          display: true,
+          text: period === 'weekly' ? 'Days' : 'Weeks',
+          color: '#d1d5db',
+        },
+        ticks: { color: '#d1d5db' },
+        grid: { color: '#374151' },
       },
     },
-  };
-
-  // Calculate stats
-  const total = (period === 'weekly'
-    ? selectedWebsite.weekly.reduce((a, b) => a + b, 0)
-    : selectedWebsite.monthly.reduce((a, b) => a + b, 0)
-  );
-  const avg = (period === 'weekly'
-    ? Math.round(total / 7)
-    : Math.round(total / 28)
-  );
-
-  // Format time helper
-  const formatTime = (minutes) => {
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return h > 0 ? `${h}h ${m}m` : `${m}m`;
   };
 
   return (
@@ -91,26 +136,33 @@ export default function Graphs() {
       {/* Header */}
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-xl font-bold">📊 Analytics</h2>
-        <Link to="/home" className="text-blue-400 hover:underline text-lg">⬅️</Link>
+        <Link to="/home" className="text-blue-400 hover:underline text-lg">
+          ⬅️
+        </Link>
       </div>
 
-      {/* Select Website */}
+      {/* Select Domain */}
       <div className="mb-4">
         <label className="block text-xs mb-1">Select Website:</label>
         <select
           className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white"
           value={selectedDomain}
-          onChange={e => setSelectedDomain(e.target.value)}
+          onChange={(e) => setSelectedDomain(e.target.value)}
         >
-          {websites.map((site) => (
-            <option key={site.domain} value={site.domain}>
-              {site.domain}
+          {Object.keys(
+            Object.values(usageData).reduce((acc, cur) => {
+              Object.keys(cur).forEach((domain) => (acc[domain] = true));
+              return acc;
+            }, {})
+          ).map((domain) => (
+            <option key={domain} value={domain}>
+              {domain}
             </option>
           ))}
         </select>
       </div>
 
-      {/* Time Period Buttons */}
+      {/* Period Selector */}
       <div className="mb-4 flex space-x-2">
         <button
           className={`flex-1 p-2 border rounded text-white font-bold ${
@@ -134,24 +186,28 @@ export default function Graphs() {
         </button>
       </div>
 
-      {/* Time Statistics */}
+      {/* Stats */}
       <div className="mb-4 flex space-x-2">
         <div className="flex-1 p-2 bg-gray-800 border border-gray-700 rounded text-center">
-          <div className="text-xs">{period === 'weekly' ? 'Total' : 'Total'}</div>
+          <div className="text-xs">Total</div>
           <div className="text-lg">{formatTime(total)}</div>
         </div>
         <div className="flex-1 p-2 bg-gray-700 border border-gray-700 rounded text-center">
-          <div className="text-xs">{period === 'weekly' ? 'Daily Avg' : 'Daily Avg'}</div>
+          <div className="text-xs">Daily Avg</div>
           <div className="text-lg">{formatTime(avg)}</div>
         </div>
       </div>
 
-      {/* Bar Chart */}
+      {/* Chart */}
       <div className="bg-gray-800 p-2 rounded border border-gray-700">
         <div className="text-xs mb-1">
           {period === 'weekly' ? 'Last 7 Days' : 'Last 4 Weeks'}
         </div>
-        <Bar data={chartData} options={chartOptions} height={180} />
+        {chartData ? (
+          <Bar data={chartData} options={chartOptions} height={180} />
+        ) : (
+          <p className="text-gray-400 text-xs">Loading chart...</p>
+        )}
       </div>
     </div>
   );

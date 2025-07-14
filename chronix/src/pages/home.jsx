@@ -2,40 +2,57 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 export default function Home() {
-  const [currentTime, setCurrentTime] = useState(0);
   const [websites, setWebsites] = useState([]);
   const [hostname, setHostname] = useState("");
+  const [activeTabStartTime, setActiveTabStartTime] = useState(null);
 
   useEffect(() => {
-    let activeDomain = "";
-    let baseTime = 0;
-
     const updateData = () => {
       chrome.storage.local.get(null, (data) => {
         chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
           if (!tab || !tab.url) return;
           const domain = new URL(tab.url).hostname;
-          activeDomain = domain;
-          baseTime = data[domain] || 0;
+          
+          // Read from root level (background script now stores there)
+          const formatted = Object.entries(data)
+            .filter(([key]) => key !== 'usage') // Skip the nested usage object
+            .map(([d, t]) => ({
+              domain: d,
+              timeSpent: t || 0,
+              favicon: `https://${d}/favicon.ico`,
+              isActive: d === domain,
+            }));
 
-          const formatted = Object.entries(data).map(([d, t]) => ({
-            domain: d,
-            timeSpent: t,
-            favicon: `https://${d}/favicon.ico`,
-            isActive: d === domain,
-          }));
-
+          // Add current domain if not in list
           if (!formatted.find((s) => s.domain === domain)) {
             formatted.unshift({
               domain: domain,
-              timeSpent: baseTime,
+              timeSpent: data[domain] || 0,
               favicon: `https://${domain}/favicon.ico`,
               isActive: true,
             });
           }
 
-          setWebsites(formatted);
-          setCurrentTime(baseTime);
+          // For the active site, add the current session time to show real-time updates
+          const activeIndex = formatted.findIndex(site => site.isActive);
+          if (activeIndex !== -1) {
+            // Get the current session time from background script
+            chrome.runtime.sendMessage({action: "getCurrentSessionTime"}, (response) => {
+              if (response && response.currentSessionTime) {
+                const updatedFormatted = [...formatted];
+                updatedFormatted[activeIndex] = {
+                  ...updatedFormatted[activeIndex],
+                  timeSpent: updatedFormatted[activeIndex].timeSpent + response.currentSessionTime
+                };
+                setWebsites(updatedFormatted);
+              } else {
+                setWebsites(formatted);
+              }
+            });
+          } else {
+            setWebsites(formatted);
+          }
+
           setHostname(domain);
         });
       });
@@ -44,34 +61,17 @@ export default function Home() {
     // Initial data fetch
     updateData();
 
-    // Re-fetch all data every 5s to stay in sync
-    const fetchInterval = setInterval(() => {
-      updateData();
-    }, 5000);
+    // Update every 1 second to show real-time changes
+    const interval = setInterval(updateData, 1000);
 
-    // Increment current tab timer locally every 1s
-    const liveInterval = setInterval(() => {
-      setCurrentTime((prev) => prev + 1);
-      setWebsites((prev) =>
-        prev.map((site) =>
-          site.domain === hostname
-            ? { ...site, timeSpent: site.timeSpent + 1 }
-            : site
-        )
-      );
-    }, 1000);
-
-    // Cleanup function - this runs when component unmounts
     return () => {
-      clearInterval(fetchInterval);
-      clearInterval(liveInterval);
+      clearInterval(interval);
     };
-  }, [hostname]); // Add hostname as dependency
+  }, []);
 
   const resetAllData = () => {
     chrome.storage.local.clear(() => {
       setWebsites([]);
-      setCurrentTime(0);
     });
   };
 
