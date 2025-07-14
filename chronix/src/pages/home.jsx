@@ -3,54 +3,56 @@ import { Link } from "react-router-dom";
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(0);
-  const [websites, setWebsites] = useState([
-    {
-      domain: "github.com",
-      timeSpent: 7245,
-      favicon: "https://github.com/favicon.ico",
-      isActive: true,
-    },
-    {
-      domain: "stackoverflow.com",
-      timeSpent: 3420,
-      favicon: "https://stackoverflow.com/favicon.ico",
-      isActive: false,
-    },
-    {
-      domain: "youtube.com",
-      timeSpent: 5670,
-      favicon: "https://youtube.com/favicon.ico",
-      isActive: false,
-    },
-    {
-      domain: "docs.google.com",
-      timeSpent: 2890,
-      favicon: "https://docs.google.com/favicon.ico",
-      isActive: false,
-    },
-    {
-      domain: "twitter.com",
-      timeSpent: 1245,
-      favicon: "https://twitter.com/favicon.ico",
-      isActive: false,
-    },
-  ]);
-useEffect(() => {
-  console.log('Home component mounted, starting interval');
-  const interval = setInterval(() => {
-    setCurrentTime((prev) => prev + 1);
-    setWebsites((prev) =>
-      prev.map((site) =>
-        site.isActive ? { ...site, timeSpent: site.timeSpent + 1 } : site
-      )
-    );
-  }, 1000);
-  return () => clearInterval(interval);
-}, []);
+  const [websites, setWebsites] = useState([]);
+  const [hostname, setHostname] = useState("");
+
+  useEffect(() => {
+    // Fetch stored data from chrome.storage.local
+    chrome.storage.local.get(null, (data) => {
+      const formatted = Object.entries(data).map(([domain, timeSpent]) => ({
+        domain,
+        timeSpent,
+        favicon: `https://${domain}/favicon.ico`,
+        isActive: false,
+      }));
+
+      // Get the active tab and mark the site as active
+      chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+        if (!tab || !tab.url) return;
+        const activeDomain = new URL(tab.url).hostname;
+        setHostname(activeDomain);
+
+        const updated = formatted.map((site) =>
+          site.domain === activeDomain ? { ...site, isActive: true } : site
+        );
+
+        // Add current site if not in list
+        if (!updated.find((s) => s.domain === activeDomain)) {
+          updated.unshift({
+            domain: activeDomain,
+            timeSpent: 0,
+            favicon: `https://${activeDomain}/favicon.ico`,
+            isActive: true,
+          });
+        }
+
+        setWebsites(updated);
+      });
+    });
+
+    // Optional: live timer UI update
+    const interval = setInterval(() => {
+      setCurrentTime((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const resetAllData = () => {
-    setCurrentTime(0);
-    setWebsites((prev) => prev.map((site) => ({ ...site, timeSpent: 0 })));
+    chrome.storage.local.clear(() => {
+      setWebsites([]);
+      setCurrentTime(0);
+    });
   };
 
   const formatTime = (seconds) => {
@@ -61,7 +63,6 @@ useEffect(() => {
   };
 
   const totalTime = websites.reduce((acc, site) => acc + site.timeSpent, 0);
-
   const activeSite = websites.find((site) => site.isActive);
 
   return (
@@ -125,8 +126,12 @@ useEffect(() => {
 
       {/* Footer Links */}
       <div className="flex justify-between text-xs text-blue-600">
-        <Link to="/graphs" className="hover:underline">📊 View Graphs</Link>
-        <Link to="/settings" className="hover:underline">⚙️ Settings</Link>
+        <Link to="/graphs" className="hover:underline">
+          📊 View Graphs
+        </Link>
+        <Link to="/settings" className="hover:underline">
+          ⚙️ Settings
+        </Link>
       </div>
     </div>
   );
