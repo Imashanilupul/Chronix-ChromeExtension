@@ -134,30 +134,30 @@ export default function Graphs() {
         title: { 
           display: true, 
           text: 'Time (minutes)', 
-          color: '#d1d5db',
+          color: '#414244ff',
           font: { size: 10 }
         },
         ticks: { 
-          color: '#d1d5db',
+          color: '#414244ff',
           font: { size: 10 },
           callback: function(value) {
             return formatTime(value);
           }
         },
-        grid: { color: '#374151' },
+        grid: { color: '#59606aff' },
       },
       x: {
         title: {
           display: true,
           text: period === 'weekly' ? 'Days' : 'Weeks',
-          color: '#d1d5db',
+          color: '#414244ff',
           font: { size: 10 }
         },
         ticks: { 
-          color: '#d1d5db',
+          color: '#414244ff',
           font: { size: 10 }
         },
-        grid: { color: '#374151' },
+        grid: { color: '#59606aff' },
       },
     },
   };
@@ -185,7 +185,7 @@ export default function Graphs() {
         <label className="block text-xs mb-1">Select Website:</label>
         <select
 
-          className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
+          className="w-full p-2 bg-white border border-gray-300 rounded text-gray-800"
 
           value={selectedDomain}
           onChange={(e) => setSelectedDomain(e.target.value)}
@@ -206,10 +206,10 @@ export default function Graphs() {
       <div className="mb-4 flex space-x-2">
         <button
 
-          className={`flex-1 p-2 border rounded text-white font-bold text-xs ${
+          className={`flex-1 p-2 border rounded font-bold ${
             period === 'weekly'
-              ? 'bg-blue-600 border-blue-500'
-              : 'bg-gray-700 border-gray-600 opacity-60'
+              ? 'bg-blue-100 border-blue-400 text-blue-800'
+              : 'bg-gray-100 border-gray-300 text-gray-500'
 
           }`}
           onClick={() => setPeriod('weekly')}
@@ -218,10 +218,10 @@ export default function Graphs() {
         </button>
         <button
 
-          className={`flex-1 p-2 border rounded text-white font-bold text-xs ${
+          className={`flex-1 p-2 border rounded font-bold ${
             period === 'monthly'
-              ? 'bg-blue-600 border-blue-500'
-              : 'bg-gray-700 border-gray-600 opacity-60'
+              ? 'bg-orange-100 border-orange-400 text-orange-800'
+              : 'bg-gray-100 border-gray-300 text-gray-500'
 
           }`}
           onClick={() => setPeriod('monthly')}
@@ -233,19 +233,19 @@ export default function Graphs() {
       {/* Stats */}
       <div className="mb-4 flex space-x-2">
 
-        <div className="flex-1 p-2 bg-gray-800 border border-gray-700 rounded text-center">
-          <div className="text-xs text-gray-400">Total</div>
-          <div className="text-sm font-bold">{formatTime(total)}</div>
+        <div className="flex-1 p-2 bg-gray-100 border border-gray-300 rounded text-center">
+          <div className="text-xs">Total</div>
+          <div className="text-lg font-semibold">{formatTime(total)}</div>
         </div>
-        <div className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-center">
-          <div className="text-xs text-gray-400">Daily Avg</div>
-          <div className="text-sm font-bold">{formatTime(avg)}</div>
+        <div className="flex-1 p-2 bg-gray-50 border border-gray-300 rounded text-center">
+          <div className="text-xs">Daily Avg</div>
+          <div className="text-lg font-semibold">{formatTime(avg)}</div>
         </div>
       </div>
 
       {/* Chart */}
-      <div className="bg-gray-800 p-3 rounded border border-gray-700">
-        <div className="text-xs mb-2 text-gray-300">
+      <div className="bg-gray-50 p-2 rounded border border-gray-200">
+        <div className="text-xs mb-1 text-gray-700">
 
           {period === 'weekly' ? 'Last 7 Days' : 'Last 4 Weeks'}
         </div>
@@ -255,7 +255,7 @@ export default function Graphs() {
           </div>
         ) : (
           <div className="h-32 flex items-center justify-center">
-            <p className="text-gray-400 text-xs">
+            <p className="text-gray-900 text-xs">
               {allDomains.length === 0 ? 'No data available yet' : 'Loading chart...'}
             </p>
           </div>
