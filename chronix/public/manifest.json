@@ -3,10 +3,14 @@
   "name": "Chronix",
   "version": "1.0.0",
   "description": "Chrome + Time tracking",
+  "permissions": ["tabs", "storage","activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "index.html"
   },
-  "permissions": ["storage","activeTab"],
   "icons": {
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
