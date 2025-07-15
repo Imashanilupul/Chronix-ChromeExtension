@@ -14,6 +14,7 @@ import {
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function Graphs() {
+
   const [usageData, setUsageData] = useState({});
   const [period, setPeriod] = useState('weekly');
   const [selectedDomain, setSelectedDomain] = useState('');
@@ -103,6 +104,7 @@ export default function Graphs() {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
+
   };
 
   const total =
@@ -167,12 +169,12 @@ export default function Graphs() {
       return acc;
     }, {})
   );
-
   return (
-    <div className="w-80 h-auto p-4 font-sans text-sm text-white bg-gray-900 overflow-hidden">
+    <div className="w-80 h-auto p-4 font-sans text-sm text-gray-900 bg-white border border-gray-300 rounded-lg shadow">
       {/* Header */}
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-xl font-bold">📊 Analytics</h2>
+
         <Link to="/home" className="text-blue-400 hover:underline text-lg">
           ⬅️
         </Link>
@@ -182,7 +184,9 @@ export default function Graphs() {
       <div className="mb-4">
         <label className="block text-xs mb-1">Select Website:</label>
         <select
+
           className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
+
           value={selectedDomain}
           onChange={(e) => setSelectedDomain(e.target.value)}
         >
@@ -201,20 +205,24 @@ export default function Graphs() {
       {/* Period Selector */}
       <div className="mb-4 flex space-x-2">
         <button
+
           className={`flex-1 p-2 border rounded text-white font-bold text-xs ${
             period === 'weekly'
               ? 'bg-blue-600 border-blue-500'
               : 'bg-gray-700 border-gray-600 opacity-60'
+
           }`}
           onClick={() => setPeriod('weekly')}
         >
           Weekly
         </button>
         <button
+
           className={`flex-1 p-2 border rounded text-white font-bold text-xs ${
             period === 'monthly'
               ? 'bg-blue-600 border-blue-500'
               : 'bg-gray-700 border-gray-600 opacity-60'
+
           }`}
           onClick={() => setPeriod('monthly')}
         >
@@ -224,6 +232,7 @@ export default function Graphs() {
 
       {/* Stats */}
       <div className="mb-4 flex space-x-2">
+
         <div className="flex-1 p-2 bg-gray-800 border border-gray-700 rounded text-center">
           <div className="text-xs text-gray-400">Total</div>
           <div className="text-sm font-bold">{formatTime(total)}</div>
@@ -237,6 +246,7 @@ export default function Graphs() {
       {/* Chart */}
       <div className="bg-gray-800 p-3 rounded border border-gray-700">
         <div className="text-xs mb-2 text-gray-300">
+
           {period === 'weekly' ? 'Last 7 Days' : 'Last 4 Weeks'}
         </div>
         {chartData && allDomains.length > 0 ? (

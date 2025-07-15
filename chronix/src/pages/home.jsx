@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 export default function Home() {
+
   const [websites, setWebsites] = useState([]);
   const [hostname, setHostname] = useState("");
   const [activeTabStartTime, setActiveTabStartTime] = useState(null);
@@ -67,6 +68,8 @@ export default function Home() {
     return () => {
       clearInterval(interval);
     };
+
+ 
   }, []);
 
   const resetAllData = () => {
@@ -125,15 +128,14 @@ export default function Home() {
       </div>
 
       {/* Website List */}
-      <div className="h-28 overflow-y-auto mb-3 space-y-2">
+      <div className="h-auto overflow-y-auto mb-3 space-y-2">
         {websites
           .sort((a, b) => b.timeSpent - a.timeSpent)
           .map((site) => (
             <div
               key={site.domain}
-              className={`flex justify-between items-center px-2 py-1 rounded-md ${
-                site.isActive ? "bg-blue-100" : "bg-gray-100"
-              }`}
+              className={`flex justify-between items-center px-2 py-1 rounded-md ${site.isActive ? "bg-blue-100" : "bg-gray-100"
+                }`}
             >
               <div className="flex items-center gap-2">
                 <img src={site.favicon} alt="" className="w-3 h-3" />
@@ -146,12 +148,14 @@ export default function Home() {
 
       {/* Footer Links */}
       <div className="flex justify-between text-xs text-blue-600">
+
         <Link to="/graphs" className="hover:underline">
           📊 View Graphs
         </Link>
         <Link to="/settings" className="hover:underline">
           ⚙️ Settings
         </Link>
+
       </div>
     </div>
   );
