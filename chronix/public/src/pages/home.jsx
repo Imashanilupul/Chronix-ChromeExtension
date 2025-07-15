@@ -111,11 +111,12 @@ export default function Home() {
 
       {/* Reset Button */}
       <button
-        onClick={resetAllData}
-        className="w-full py-1 mb-3 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
-      >
-        🔄 Reset Data
-      </button>
+  onClick={resetAllData}
+  className="w-full flex items-center justify-center gap-2 py-2 px-4 mb-4 bg-blue-600 text-white text-base font-medium rounded-xl shadow-md hover:bg-blue-700 transition duration-200 ease-in-out"
+>
+  🔄 <span>Reset Data</span>
+</button>
+
 
       {/* Stats */}
       <div className="mb-4 space-y-1">
@@ -149,10 +150,10 @@ export default function Home() {
       {/* Footer Links */}
       <div className="flex justify-between text-xs text-blue-600">
 
-        <Link to="/graphs" className="hover:underline">
+        <Link to="/graphs" className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 rounded hover:bg-blue-50 hover:underline transition">
           📊 View Graphs
         </Link>
-        <Link to="/settings" className="hover:underline">
+        <Link to="/settings" className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 rounded hover:bg-gray-100 hover:underline transition">
           ⚙️ Settings
         </Link>
 
