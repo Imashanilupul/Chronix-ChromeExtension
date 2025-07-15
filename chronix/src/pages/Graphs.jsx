@@ -25,7 +25,7 @@ export default function Graphs() {
       const usage = result.usage || {};
       setUsageData(usage);
 
-      // Auto-select first domain
+      //Auto-select first domain
       const domainsSet = new Set();
       Object.values(usage).forEach((dayData) => {
         Object.keys(dayData).forEach((domain) => domainsSet.add(domain));
