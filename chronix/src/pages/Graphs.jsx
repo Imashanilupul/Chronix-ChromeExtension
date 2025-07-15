@@ -55,17 +55,23 @@ export default function Graphs() {
         const label = day.toLocaleDateString('en-US', { weekday: 'short' });
 
         labels.push(label);
-        data.push((usageData[key] && usageData[key][selectedDomain]) || 0);
+        // Convert seconds to minutes and round
+        const timeInSeconds = (usageData[key] && usageData[key][selectedDomain]) || 0;
+        data.push(Math.round(timeInSeconds / 60));
       }
     } else {
       // Monthly: 4 weekly buckets
       const buckets = [0, 0, 0, 0];
+      
       Object.entries(usageData).forEach(([dateStr, domains]) => {
         const date = new Date(dateStr);
         const diff = Math.floor((today - date) / (1000 * 60 * 60 * 24));
         const weekIndex = Math.floor(diff / 7);
+        
         if (weekIndex >= 0 && weekIndex < 4) {
-          buckets[3 - weekIndex] += domains[selectedDomain] || 0;
+          // Convert seconds to minutes
+          const timeInSeconds = domains[selectedDomain] || 0;
+          buckets[3 - weekIndex] += Math.round(timeInSeconds / 60);
         }
       });
 
@@ -92,7 +98,7 @@ export default function Graphs() {
     setChartData(dataset);
   }, [period, selectedDomain, usageData]);
 
-  // Format time
+  // Format time in minutes to human readable
   const formatTime = (minutes) => {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
@@ -108,15 +114,34 @@ export default function Graphs() {
 
   const chartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
       title: { display: false },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return `${formatTime(context.parsed.y)}`;
+          }
+        }
+      }
     },
     scales: {
       y: {
         beginAtZero: true,
-        title: { display: true, text: 'Time (minutes)', color: '#d1d5db' },
-        ticks: { color: '#d1d5db' },
+        title: { 
+          display: true, 
+          text: 'Time (minutes)', 
+          color: '#d1d5db',
+          font: { size: 10 }
+        },
+        ticks: { 
+          color: '#d1d5db',
+          font: { size: 10 },
+          callback: function(value) {
+            return formatTime(value);
+          }
+        },
         grid: { color: '#374151' },
       },
       x: {
@@ -124,12 +149,24 @@ export default function Graphs() {
           display: true,
           text: period === 'weekly' ? 'Days' : 'Weeks',
           color: '#d1d5db',
+          font: { size: 10 }
         },
-        ticks: { color: '#d1d5db' },
+        ticks: { 
+          color: '#d1d5db',
+          font: { size: 10 }
+        },
         grid: { color: '#374151' },
       },
     },
   };
+
+  // Get all domains for the dropdown
+  const allDomains = Object.keys(
+    Object.values(usageData).reduce((acc, cur) => {
+      Object.keys(cur).forEach((domain) => (acc[domain] = true));
+      return acc;
+    }, {})
+  );
 
   return (
     <div className="w-80 h-auto p-4 font-sans text-sm text-white bg-gray-900 overflow-hidden">
@@ -145,40 +182,39 @@ export default function Graphs() {
       <div className="mb-4">
         <label className="block text-xs mb-1">Select Website:</label>
         <select
-          className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white"
+          className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
           value={selectedDomain}
           onChange={(e) => setSelectedDomain(e.target.value)}
         >
-          {Object.keys(
-            Object.values(usageData).reduce((acc, cur) => {
-              Object.keys(cur).forEach((domain) => (acc[domain] = true));
-              return acc;
-            }, {})
-          ).map((domain) => (
-            <option key={domain} value={domain}>
-              {domain}
-            </option>
-          ))}
+          {allDomains.length === 0 ? (
+            <option value="">No data available</option>
+          ) : (
+            allDomains.map((domain) => (
+              <option key={domain} value={domain}>
+                {domain}
+              </option>
+            ))
+          )}
         </select>
       </div>
 
       {/* Period Selector */}
       <div className="mb-4 flex space-x-2">
         <button
-          className={`flex-1 p-2 border rounded text-white font-bold ${
+          className={`flex-1 p-2 border rounded text-white font-bold text-xs ${
             period === 'weekly'
-              ? 'bg-gray-800 border-gray-700'
-              : 'bg-gray-700 border-gray-700 opacity-60'
+              ? 'bg-blue-600 border-blue-500'
+              : 'bg-gray-700 border-gray-600 opacity-60'
           }`}
           onClick={() => setPeriod('weekly')}
         >
           Weekly
         </button>
         <button
-          className={`flex-1 p-2 border rounded text-white font-bold ${
+          className={`flex-1 p-2 border rounded text-white font-bold text-xs ${
             period === 'monthly'
-              ? 'bg-gray-800 border-gray-700'
-              : 'bg-gray-700 border-gray-700 opacity-60'
+              ? 'bg-blue-600 border-blue-500'
+              : 'bg-gray-700 border-gray-600 opacity-60'
           }`}
           onClick={() => setPeriod('monthly')}
         >
@@ -189,24 +225,30 @@ export default function Graphs() {
       {/* Stats */}
       <div className="mb-4 flex space-x-2">
         <div className="flex-1 p-2 bg-gray-800 border border-gray-700 rounded text-center">
-          <div className="text-xs">Total</div>
-          <div className="text-lg">{formatTime(total)}</div>
+          <div className="text-xs text-gray-400">Total</div>
+          <div className="text-sm font-bold">{formatTime(total)}</div>
         </div>
-        <div className="flex-1 p-2 bg-gray-700 border border-gray-700 rounded text-center">
-          <div className="text-xs">Daily Avg</div>
-          <div className="text-lg">{formatTime(avg)}</div>
+        <div className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-center">
+          <div className="text-xs text-gray-400">Daily Avg</div>
+          <div className="text-sm font-bold">{formatTime(avg)}</div>
         </div>
       </div>
 
       {/* Chart */}
-      <div className="bg-gray-800 p-2 rounded border border-gray-700">
-        <div className="text-xs mb-1">
+      <div className="bg-gray-800 p-3 rounded border border-gray-700">
+        <div className="text-xs mb-2 text-gray-300">
           {period === 'weekly' ? 'Last 7 Days' : 'Last 4 Weeks'}
         </div>
-        {chartData ? (
-          <Bar data={chartData} options={chartOptions} height={180} />
+        {chartData && allDomains.length > 0 ? (
+          <div style={{ height: '180px' }}>
+            <Bar data={chartData} options={chartOptions} />
+          </div>
         ) : (
-          <p className="text-gray-400 text-xs">Loading chart...</p>
+          <div className="h-32 flex items-center justify-center">
+            <p className="text-gray-400 text-xs">
+              {allDomains.length === 0 ? 'No data available yet' : 'Loading chart...'}
+            </p>
+          </div>
         )}
       </div>
     </div>
