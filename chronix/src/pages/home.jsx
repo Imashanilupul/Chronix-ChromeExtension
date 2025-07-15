@@ -2,55 +2,80 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 export default function Home() {
-  const [currentTime, setCurrentTime] = useState(0);
-  const [websites, setWebsites] = useState([
-    {
-      domain: "github.com",
-      timeSpent: 7245,
-      favicon: "https://github.com/favicon.ico",
-      isActive: true,
-    },
-    {
-      domain: "stackoverflow.com",
-      timeSpent: 3420,
-      favicon: "https://stackoverflow.com/favicon.ico",
-      isActive: false,
-    },
-    {
-      domain: "youtube.com",
-      timeSpent: 5670,
-      favicon: "https://youtube.com/favicon.ico",
-      isActive: false,
-    },
-    {
-      domain: "docs.google.com",
-      timeSpent: 2890,
-      favicon: "https://docs.google.com/favicon.ico",
-      isActive: false,
-    },
-    {
-      domain: "twitter.com",
-      timeSpent: 1245,
-      favicon: "https://twitter.com/favicon.ico",
-      isActive: false,
-    },
-  ]);
+
+  const [websites, setWebsites] = useState([]);
+  const [hostname, setHostname] = useState("");
+  const [activeTabStartTime, setActiveTabStartTime] = useState(null);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime((prev) => prev + 1);
-      setWebsites((prev) =>
-        prev.map((site) =>
-          site.isActive ? { ...site, timeSpent: site.timeSpent + 1 } : site
-        )
-      );
-    }, 1000);
-    return () => clearInterval(interval);
+    const updateData = () => {
+      chrome.storage.local.get(null, (data) => {
+        chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+          if (!tab || !tab.url) return;
+          const domain = new URL(tab.url).hostname;
+          
+          // Read from root level (background script now stores there)
+          const formatted = Object.entries(data)
+            .filter(([key]) => key !== 'usage') // Skip the nested usage object
+            .map(([d, t]) => ({
+              domain: d,
+              timeSpent: t || 0,
+              favicon: `https://${d}/favicon.ico`,
+              isActive: d === domain,
+            }));
+
+          // Add current domain if not in list
+          if (!formatted.find((s) => s.domain === domain)) {
+            formatted.unshift({
+              domain: domain,
+              timeSpent: data[domain] || 0,
+              favicon: `https://${domain}/favicon.ico`,
+              isActive: true,
+            });
+          }
+
+          // For the active site, add the current session time to show real-time updates
+          const activeIndex = formatted.findIndex(site => site.isActive);
+          if (activeIndex !== -1) {
+            // Get the current session time from background script
+            chrome.runtime.sendMessage({action: "getCurrentSessionTime"}, (response) => {
+              if (response && response.currentSessionTime) {
+                const updatedFormatted = [...formatted];
+                updatedFormatted[activeIndex] = {
+                  ...updatedFormatted[activeIndex],
+                  timeSpent: updatedFormatted[activeIndex].timeSpent + response.currentSessionTime
+                };
+                setWebsites(updatedFormatted);
+              } else {
+                setWebsites(formatted);
+              }
+            });
+          } else {
+            setWebsites(formatted);
+          }
+
+          setHostname(domain);
+        });
+      });
+    };
+
+    // Initial data fetch
+    updateData();
+
+    // Update every 1 second to show real-time changes
+    const interval = setInterval(updateData, 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
+
+ 
   }, []);
 
   const resetAllData = () => {
-    setCurrentTime(0);
-    setWebsites((prev) => prev.map((site) => ({ ...site, timeSpent: 0 })));
+    chrome.storage.local.clear(() => {
+      setWebsites([]);
+    });
   };
 
   const formatTime = (seconds) => {
@@ -61,7 +86,6 @@ export default function Home() {
   };
 
   const totalTime = websites.reduce((acc, site) => acc + site.timeSpent, 0);
-
   const activeSite = websites.find((site) => site.isActive);
 
   return (
@@ -104,15 +128,14 @@ export default function Home() {
       </div>
 
       {/* Website List */}
-      <div className="h-28 overflow-y-auto mb-3 space-y-2">
+      <div className="h-auto overflow-y-auto mb-3 space-y-2">
         {websites
           .sort((a, b) => b.timeSpent - a.timeSpent)
           .map((site) => (
             <div
               key={site.domain}
-              className={`flex justify-between items-center px-2 py-1 rounded-md ${
-                site.isActive ? "bg-blue-100" : "bg-gray-100"
-              }`}
+              className={`flex justify-between items-center px-2 py-1 rounded-md ${site.isActive ? "bg-blue-100" : "bg-gray-100"
+                }`}
             >
               <div className="flex items-center gap-2">
                 <img src={site.favicon} alt="" className="w-3 h-3" />
@@ -125,8 +148,14 @@ export default function Home() {
 
       {/* Footer Links */}
       <div className="flex justify-between text-xs text-blue-600">
-        <Link to="/graphs" className="hover:underline">📊 View Graphs</Link>
-        <Link to="/settings" className="hover:underline">⚙️ Settings</Link>
+
+        <Link to="/graphs" className="hover:underline">
+          📊 View Graphs
+        </Link>
+        <Link to="/settings" className="hover:underline">
+          ⚙️ Settings
+        </Link>
+
       </div>
     </div>
   );
