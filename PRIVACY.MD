@@ -19,7 +19,7 @@ Chronix collects the following data:
 - All data is stored **locally** on your device using Chrome's storage API
 - **No data is transmitted** to external servers
 - **No data is shared** with third parties
-- **No personal information** is collected
+
 
 ## Data Usage
 Collected data is used exclusively to:
