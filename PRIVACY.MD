@@ -4,7 +4,7 @@ Privacy Policy URL
 Create a privacy policy and host it on GitHub Pages or your website. Here's the content:
 markdown# Chronix Privacy Policy
 
-Last updated: 7/15/2025
+Last updated: 7/23/2025
 
 ## Overview
 Chronix is a time tracking browser extension that helps users monitor their website usage. We are committed to protecting your privacy and being transparent about our data practices.
