@@ -40,4 +40,4 @@ Chronix does not use any third-party analytics, tracking, or data collection ser
 We will update this privacy policy if our data practices change. The updated policy will be posted here with a new "Last updated" date.
 
 ## Contact
-For questions about this privacy policy, please contact: imashanilupul@gmail.com
+For questions about this privacy policy, please contact: thamindusct028@gmail.com
