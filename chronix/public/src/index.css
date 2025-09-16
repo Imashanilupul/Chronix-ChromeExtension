@@ -6,3 +6,135 @@ body, #root {
   min-width: 300px;
   min-height: 400px;
 }
+
+/* Chrome Extension Specific Styles - Override Tailwind purging */
+@layer utilities {
+  /* Layout utilities */
+  .w-80 { width: 20rem !important; }
+  .w-96 { width: 24rem !important; }
+  .w-full { width: 100% !important; }
+  .w-4 { width: 1rem !important; }
+  .h-auto { height: auto !important; }
+  .h-4 { height: 1rem !important; }
+  .max-h-96 { max-height: 24rem !important; }
+  .max-h-20 { max-height: 5rem !important; }
+  
+  /* Padding utilities */
+  .p-1 { padding: 0.25rem !important; }
+  .p-2 { padding: 0.5rem !important; }
+  .p-3 { padding: 0.75rem !important; }
+  .p-4 { padding: 1rem !important; }
+  .px-2 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+  .px-3 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+  .px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .py-1 { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
+  .py-2 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+  
+  /* Margin utilities */
+  .mb-0 { margin-bottom: 0 !important; }
+  .mb-1 { margin-bottom: 0.25rem !important; }
+  .mb-2 { margin-bottom: 0.5rem !important; }
+  .mb-3 { margin-bottom: 0.75rem !important; }
+  .mb-4 { margin-bottom: 1rem !important; }
+  .mb-6 { margin-bottom: 1.5rem !important; }
+  .mt-2 { margin-top: 0.5rem !important; }
+  .ml-4 { margin-left: 1rem !important; }
+  
+  /* Typography utilities */
+  .text-xs { font-size: 0.75rem !important; }
+  .text-sm { font-size: 0.875rem !important; }
+  .text-base { font-size: 1rem !important; }
+  .text-lg { font-size: 1.125rem !important; }
+  .text-xl { font-size: 1.25rem !important; }
+  .text-2xl { font-size: 1.5rem !important; }
+  .font-medium { font-weight: 500 !important; }
+  .font-semibold { font-weight: 600 !important; }
+  .font-bold { font-weight: 700 !important; }
+  .text-center { text-align: center !important; }
+  
+  /* Color utilities */
+  .text-gray-500 { color: #6b7280 !important; }
+  .text-gray-600 { color: #4b5563 !important; }
+  .text-gray-700 { color: #374151 !important; }
+  .text-gray-800 { color: #1f2937 !important; }
+  .text-gray-900 { color: #111827 !important; }
+  .text-blue-400 { color: #60a5fa !important; }
+  .text-blue-600 { color: #2563eb !important; }
+  .text-blue-800 { color: #1e40af !important; }
+  .text-green-600 { color: #16a34a !important; }
+  .text-red-600 { color: #dc2626 !important; }
+  .text-white { color: #ffffff !important; }
+  
+  /* Background utilities */
+  .bg-white { background-color: #ffffff !important; }
+  .bg-gray-50 { background-color: #f9fafb !important; }
+  .bg-gray-100 { background-color: #f3f4f6 !important; }
+  .bg-gray-600 { background-color: #4b5563 !important; }
+  .bg-blue-50 { background-color: #eff6ff !important; }
+  .bg-blue-100 { background-color: #dbeafe !important; }
+  .bg-blue-600 { background-color: #2563eb !important; }
+  .bg-blue-700 { background-color: #1d4ed8 !important; }
+  
+  /* Border utilities */
+  .border { border-width: 1px !important; border-style: solid !important; }
+  .border-gray-200 { border-color: #e5e7eb !important; }
+  .border-gray-300 { border-color: #d1d5db !important; }
+  .border-blue-400 { border-color: #60a5fa !important; }
+  .rounded { border-radius: 0.25rem !important; }
+  .rounded-lg { border-radius: 0.5rem !important; }
+  .rounded-xl { border-radius: 0.75rem !important; }
+  
+  /* Flexbox utilities */
+  .flex { display: flex !important; }
+  .inline-flex { display: inline-flex !important; }
+  .flex-1 { flex: 1 1 0% !important; }
+  .items-center { align-items: center !important; }
+  .justify-between { justify-content: space-between !important; }
+  .justify-center { justify-content: center !important; }
+  .gap-2 { gap: 0.5rem !important; }
+  .space-x-2 > * + * { margin-left: 0.5rem !important; }
+  .space-y-2 > * + * { margin-top: 0.5rem !important; }
+  .space-y-4 > * + * { margin-top: 1rem !important; }
+  
+  /* Position utilities */
+  .sticky { position: sticky !important; }
+  .top-0 { top: 0 !important; }
+  .overflow-hidden { overflow: hidden !important; }
+  .overflow-y-auto { overflow-y: auto !important; }
+  
+  /* Effect utilities */
+  .shadow { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important; }
+  .transition { transition: all 150ms ease !important; }
+  
+  /* Hover utilities */
+  .hover\:underline:hover { text-decoration: underline !important; }
+  .hover\:bg-blue-50:hover { background-color: #eff6ff !important; }
+  .hover\:bg-blue-700:hover { background-color: #1d4ed8 !important; }
+  .hover\:bg-gray-100:hover { background-color: #f3f4f6 !important; }
+  
+  /* Font utilities */
+  .font-sans { font-family: ui-sans-serif, system-ui, sans-serif !important; }
+}
+
+/* Chrome Extension specific overrides */
+body {
+  margin: 0;
+  padding: 0;
+  width: 380px;
+  min-height: 500px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #ffffff;
+  overflow: hidden;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
