@@ -89,22 +89,22 @@ export default function Home() {
   const activeSite = websites.find((site) => site.isActive);
 
   return (
-    <div className="w-80 h-auto p-4 font-sans text-sm text-gray-800 overflow-hidden">
+    <div className="w-full h-auto p-5 font-sans text-sm text-gray-800 overflow-hidden">
       {/* Header */}
       <div className="mb-4">
-        <h2 className="text-xl font-bold mb-0">⏱ Chronix</h2>
-        <p className="text-xs text-gray-500">Active Time Tracker</p>
+        <h2 className="text-xl font-bold mb-1">⏱ Chronix</h2>
+        <p className="text-sm text-gray-500">Active Time Tracker</p>
       </div>
 
       {/* Active Website Card */}
       {activeSite && (
-        <div className="border border-gray-300 p-3 rounded-md mb-4">
-          <div className="flex items-center gap-2">
+        <div className="border border-gray-300 p-4 rounded-lg mb-4 bg-gray-50">
+          <div className="flex items-center gap-2 mb-2">
             <img src={activeSite.favicon} alt="" className="w-4 h-4" />
-            <strong>{activeSite.domain}</strong>
+            <strong className="text-base">{activeSite.domain}</strong>
           </div>
-          <div className="mt-2 text-gray-700">
-            Time Spent: {formatTime(activeSite.timeSpent)}
+          <div className="text-gray-700">
+            Time Spent: <span className="font-medium">{formatTime(activeSite.timeSpent)}</span>
           </div>
         </div>
       )}
@@ -112,51 +112,49 @@ export default function Home() {
       {/* Reset Button */}
       <button
   onClick={resetAllData}
-  className="w-full flex items-center justify-center gap-2 py-2 px-4 mb-4 bg-blue-600 text-white text-base font-medium rounded-xl shadow-md hover:bg-blue-700 transition duration-200 ease-in-out"
+  className="w-full flex items-center justify-center gap-2 py-3 px-4 mb-6 bg-blue-600 text-white text-base font-medium rounded-xl shadow-md hover:bg-blue-700 transition duration-200 ease-in-out"
 >
   🔄 <span>Reset Data</span>
 </button>
 
 
       {/* Stats */}
-      <div className="mb-4 space-y-1">
-        <div>
-          <strong>Total Time Today:</strong> {formatTime(totalTime)}
+      <div className="mb-4 space-y-2">
+        <div className="text-base">
+          <strong>Total Time Today:</strong> <span className="text-blue-600 font-medium">{formatTime(totalTime)}</span>
         </div>
-        <div>
-          <strong>Sites Visited:</strong> {websites.length}
+        <div className="text-base">
+          <strong>Sites Visited:</strong> <span className="text-blue-600 font-medium">{websites.length}</span>
         </div>
       </div>
 
       {/* Website List */}
-      <div className="h-auto overflow-y-auto mb-3 space-y-2">
+      <div className="max-h-32 overflow-y-auto mb-4 space-y-2">
         {websites
           .sort((a, b) => b.timeSpent - a.timeSpent)
           .map((site) => (
             <div
               key={site.domain}
-              className={`flex justify-between items-center px-2 py-1 rounded-md ${site.isActive ? "bg-blue-100" : "bg-gray-100"
+              className={`flex justify-between items-center px-3 py-2 rounded-lg ${site.isActive ? "bg-blue-100 border border-blue-200" : "bg-gray-100"
                 }`}
             >
               <div className="flex items-center gap-2">
-                <img src={site.favicon} alt="" className="w-3 h-3" />
-                <span className="text-xs">{site.domain}</span>
+                <img src={site.favicon} alt="" className="w-4 h-4" />
+                <span className="text-sm font-medium">{site.domain}</span>
               </div>
-              <span className="text-xs">{formatTime(site.timeSpent)}</span>
+              <span className="text-sm text-gray-600 font-medium">{formatTime(site.timeSpent)}</span>
             </div>
           ))}
       </div>
 
       {/* Footer Links */}
-      <div className="flex justify-between text-xs text-blue-600">
-
-        <Link to="/graphs" className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 rounded hover:bg-blue-50 hover:underline transition">
+      <div className="flex justify-between gap-2 mt-4">
+        <Link to="/graphs" className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 hover:underline transition">
           📊 View Graphs
         </Link>
-        <Link to="/settings" className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 rounded hover:bg-gray-100 hover:underline transition">
+        <Link to="/settings" className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 hover:underline transition">
           ⚙️ Settings
         </Link>
-
       </div>
     </div>
   );
