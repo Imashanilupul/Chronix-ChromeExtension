@@ -3,7 +3,7 @@
   "name": "Chronix",
   "version": "1.0.0",
   "description": "Chrome + Time tracking",
-  "permissions": ["tabs", "storage","activeTab"],
+  "permissions": ["tabs", "storage", "activeTab", "notifications"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"

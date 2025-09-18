@@ -6,9 +6,32 @@ export default function Home() {
   const [websites, setWebsites] = useState([]);
   const [hostname, setHostname] = useState("");
   const [activeTabStartTime, setActiveTabStartTime] = useState(null);
+  const [trackingStatus, setTrackingStatus] = useState({
+    isTracking: false,
+    activeTab: null,
+    isIdle: false
+  });
+  const [settings, setSettings] = useState({
+    trackingEnabled: true,
+    excludedSites: []
+  });
 
   useEffect(() => {
     const updateData = () => {
+      // Get tracking status
+      chrome.runtime.sendMessage({action: "getTrackingStatus"}, (response) => {
+        if (response) {
+          setTrackingStatus(response);
+        }
+      });
+
+      // Get settings
+      chrome.runtime.sendMessage({action: "getSettings"}, (response) => {
+        if (response) {
+          setSettings(response.settings);
+        }
+      });
+
       chrome.storage.local.get(null, (data) => {
         chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
           if (!tab || !tab.url) return;
@@ -78,6 +101,11 @@ export default function Home() {
     });
   };
 
+  const toggleTracking = () => {
+    const newSettings = { ...settings, trackingEnabled: !settings.trackingEnabled };
+    chrome.storage.sync.set({ chronixSettings: newSettings });
+  };
+
   const formatTime = (seconds) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -89,11 +117,38 @@ export default function Home() {
   const activeSite = websites.find((site) => site.isActive);
 
   return (
-    <div className="w-full h-auto p-5 font-sans text-sm text-gray-800 overflow-hidden">
+    <div className="w-full h-auto p-5 font-sans text-sm text-gray-800 overflow-hidden bg-white">
       {/* Header */}
       <div className="mb-4">
-        <h2 className="text-xl font-bold mb-1">⏱ Chronix</h2>
-        <p className="text-sm text-gray-500">Active Time Tracker</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold mb-1 text-gray-900">⏱ Chronix</h2>
+            <p className="text-sm text-gray-500">Active Time Tracker</p>
+          </div>
+          <div className="text-right">
+            <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+              settings.trackingEnabled && trackingStatus.isTracking 
+                ? 'bg-green-100 text-green-700' 
+                : settings.trackingEnabled && trackingStatus.isIdle
+                ? 'bg-yellow-100 text-yellow-700'
+                : 'bg-red-100 text-red-700'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${
+                settings.trackingEnabled && trackingStatus.isTracking 
+                  ? 'bg-green-500' 
+                  : settings.trackingEnabled && trackingStatus.isIdle
+                  ? 'bg-yellow-500'
+                  : 'bg-red-500'
+              }`}></div>
+              {settings.trackingEnabled && trackingStatus.isTracking 
+                ? 'Tracking' 
+                : settings.trackingEnabled && trackingStatus.isIdle
+                ? 'Idle'
+                : 'Disabled'
+              }
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Active Website Card */}
@@ -102,6 +157,9 @@ export default function Home() {
           <div className="flex items-center gap-2 mb-2">
             <img src={activeSite.favicon} alt="" className="w-4 h-4" />
             <strong className="text-base">{activeSite.domain}</strong>
+            {settings.excludedSites?.includes(activeSite.domain) && (
+              <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">Excluded</span>
+            )}
           </div>
           <div className="text-gray-700">
             Time Spent: <span className="font-medium">{formatTime(activeSite.timeSpent)}</span>
@@ -109,13 +167,26 @@ export default function Home() {
         </div>
       )}
 
-      {/* Reset Button */}
-      <button
-  onClick={resetAllData}
-  className="w-full flex items-center justify-center gap-2 py-3 px-4 mb-6 bg-blue-600 text-white text-base font-medium rounded-xl shadow-md hover:bg-blue-700 transition duration-200 ease-in-out"
->
-  🔄 <span>Reset Data</span>
-</button>
+      {/* Control Buttons */}
+      <div className="mb-6 space-y-3">
+        <button
+          onClick={toggleTracking}
+          className={`w-full flex items-center justify-center gap-2 py-3 px-4 text-base font-medium rounded-xl shadow-md transition duration-200 ease-in-out ${
+            settings.trackingEnabled 
+              ? 'bg-red-600 text-white hover:bg-red-700' 
+              : 'bg-green-600 text-white hover:bg-green-700'
+          }`}
+        >
+          {settings.trackingEnabled ? '⏸️ Pause Tracking' : '▶️ Start Tracking'}
+        </button>
+        
+        <button
+          onClick={resetAllData}
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 text-white text-base font-medium rounded-xl shadow-md hover:bg-blue-700 transition duration-200 ease-in-out"
+        >
+          🔄 <span>Reset Data</span>
+        </button>
+      </div>
 
 
       {/* Stats */}
