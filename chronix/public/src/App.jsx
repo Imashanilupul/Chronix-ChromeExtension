@@ -14,11 +14,10 @@ export default function App() {
     if (typeof chrome !== 'undefined' && chrome.storage) {
       chrome.storage.sync.get(['chronixSettings'], (result) => {
         console.log('App.jsx: Retrieved settings:', result);
-        if (result.chronixSettings && typeof result.chronixSettings.darkMode !== 'undefined') {
-          console.log('App.jsx: Setting dark mode to:', result.chronixSettings.darkMode);
-          setIsDarkMode(result.chronixSettings.darkMode);
-          document.body.classList.toggle('dark', result.chronixSettings.darkMode);
-        }
+        const darkMode = result.chronixSettings?.darkMode ?? false;
+        console.log('App.jsx: Setting dark mode to:', darkMode);
+        setIsDarkMode(darkMode);
+        document.body.classList.toggle('dark', darkMode);
       });
 
       // Listen for settings changes

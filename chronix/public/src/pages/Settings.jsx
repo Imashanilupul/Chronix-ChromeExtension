@@ -32,8 +32,9 @@ export default function Settings() {
       chrome.storage.sync.get(['chronixSettings'], (result) => {
         console.log('Retrieved settings from Chrome storage:', result);
         if (result.chronixSettings) {
-          setSettings({ ...settings, ...result.chronixSettings });
-          console.log('Settings loaded from Chrome storage:', { ...settings, ...result.chronixSettings });
+          const mergedSettings = { ...settings, ...result.chronixSettings };
+          setSettings(mergedSettings);
+          console.log('Settings loaded from Chrome storage:', mergedSettings);
         } else {
           console.log('No settings found in Chrome storage, using defaults');
         }
@@ -43,8 +44,9 @@ export default function Settings() {
       const saved = localStorage.getItem('chronixSettings');
       if (saved) {
         const parsed = JSON.parse(saved);
-        setSettings({ ...settings, ...parsed });
-        console.log('Settings loaded from localStorage:', parsed);
+        const mergedSettings = { ...settings, ...parsed };
+        setSettings(mergedSettings);
+        console.log('Settings loaded from localStorage:', mergedSettings);
       } else {
         console.log('No settings found, using defaults');
       }
@@ -157,9 +159,9 @@ export default function Settings() {
   };
 
   return (
-    <div className="w-full h-auto overflow-y-auto p-1 font-sans text-xs text-gray-900 bg-white">
+    <div className="w-full h-auto overflow-y-auto p-1 font-sans text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">
       {/* Header */}
-      <div className="mb-1 flex items-center justify-between sticky top-0 bg-white pb-0.5 border-b border-gray-200">
+      <div className="mb-1 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 pb-0.5 border-b border-gray-200 dark:border-gray-600">
         <div className="flex items-center space-x-1">
           <Link
             to="/home"
@@ -178,7 +180,7 @@ export default function Settings() {
       <div className="space-y-1">
         {/* Tracking Settings */}
         <section>
-          <h2 className="text-base font-semibold mb-1 text-gray-800">⏱️ Tracking</h2>
+          <h2 className="text-base font-semibold mb-1 text-gray-800 dark:text-gray-200">⏱️ Tracking</h2>
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="text-xs">Enable time tracking</label>
@@ -228,7 +230,7 @@ export default function Settings() {
 
         {/* Notifications */}
         <section>
-          <h2 className="text-base font-semibold mb-1 text-gray-800">🔔 Notifications</h2>
+          <h2 className="text-base font-semibold mb-1 text-gray-800 dark:text-gray-200">🔔 Notifications</h2>
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="text-xs">Enable notifications</label>
@@ -278,7 +280,7 @@ export default function Settings() {
 
         {/* Appearance */}
         <section>
-          <h2 className="text-base font-semibold mb-1 text-gray-800">🎨 Appearance</h2>
+          <h2 className="text-base font-semibold mb-1 text-gray-800 dark:text-gray-200">🎨 Appearance</h2>
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="text-xs">Dark mode</label>
@@ -318,7 +320,7 @@ export default function Settings() {
 
         {/* Privacy & Data */}
         <section>
-          <h2 className="text-base font-semibold mb-1 text-gray-800">🔒 Privacy & Data</h2>
+          <h2 className="text-base font-semibold mb-1 text-gray-800 dark:text-gray-200">🔒 Privacy & Data</h2>
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="text-xs">Privacy mode</label>
@@ -359,7 +361,7 @@ export default function Settings() {
 
         {/* Excluded Sites */}
         <section>
-          <h2 className="text-base font-semibold mb-1 text-gray-800">🚫 Excluded Sites</h2>
+          <h2 className="text-base font-semibold mb-1 text-gray-800 dark:text-gray-200">🚫 Excluded Sites</h2>
           <div className="space-y-1">
             <div className="flex space-x-1">
               <input
