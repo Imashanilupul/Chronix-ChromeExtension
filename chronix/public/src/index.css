@@ -176,30 +176,6 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Dark mode styles */
-body.dark {
-  background-color: #1f2937 !important;
-  color: #f9fafb !important;
-}
-
-body.dark .bg-white { background-color: #1f2937 !important; }
-body.dark .bg-gray-50 { background-color: #374151 !important; }
-body.dark .bg-gray-100 { background-color: #4b5563 !important; }
-body.dark .bg-blue-50 { background-color: #1e3a8a !important; }
-body.dark .bg-blue-100 { background-color: #1d4ed8 !important; }
-
-body.dark .text-gray-500 { color: #9ca3af !important; }
-body.dark .text-gray-600 { color: #d1d5db !important; }
-body.dark .text-gray-700 { color: #e5e7eb !important; }
-body.dark .text-gray-800 { color: #f3f4f6 !important; }
-body.dark .text-gray-900 { color: #f9fafb !important; }
-
-body.dark .border-gray-200 { border-color: #4b5563 !important; }
-body.dark .border-gray-300 { border-color: #6b7280 !important; }
-
-body.dark .shadow { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2) !important; }
-body.dark .shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2) !important; }
-
 #root {
   width: 100%;
   height: 100%;
@@ -221,23 +197,11 @@ body.dark .shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px 
   background: #f1f1f1;
 }
 
-body.dark ::-webkit-scrollbar-track {
-  background: #374151;
-}
-
 ::-webkit-scrollbar-thumb {
   background: #c1c1c1;
   border-radius: 3px;
 }
 
-body.dark ::-webkit-scrollbar-thumb {
-  background: #6b7280;
-}
-
 ::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
-}
-
-body.dark ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
 }

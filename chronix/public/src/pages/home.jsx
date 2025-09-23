@@ -5,6 +5,45 @@ export default function Home() {
 
   const [websites, setWebsites] = useState([]);
   const [hostname, setHostname] = useState("");
+    function testNotification() {
+      if (window.chrome && chrome.notifications) {
+        chrome.notifications.create({
+          type: 'basic',
+          iconUrl: 'icons/icon-48.png',
+          title: 'Chronix Test Notification',
+          message: 'This is a test notification from the popup.'
+        }, (id) => {
+          if (chrome.runtime.lastError) {
+            alert('Notification error: ' + chrome.runtime.lastError.message);
+          } else {
+            alert('Notification sent!');
+          }
+        });
+      } else {
+        alert('chrome.notifications API not available.');
+      }
+    }
+
+    React.useEffect(() => {
+      if (window.chrome && chrome.runtime && chrome.notifications) {
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+          if (message.type === 'BREAK_REMINDER') {
+            chrome.notifications.create({
+              type: 'basic',
+              iconUrl: 'icons/icon-48.png',
+              title: 'Chronix - Time for a Break!',
+              message: `You've been working for ${message.interval} minutes. Consider taking a break!`
+            }, (id) => {
+              if (chrome.runtime.lastError) {
+                alert('Notification error: ' + chrome.runtime.lastError.message);
+              } else {
+                console.log('Break reminder notification sent from popup!');
+              }
+            });
+          }
+        });
+      }
+    }, []);
   const [activeTabStartTime, setActiveTabStartTime] = useState(null);
   const [trackingStatus, setTrackingStatus] = useState({
     isTracking: false,
@@ -179,6 +218,9 @@ export default function Home() {
         >
           {settings.trackingEnabled ? '⏸️ Pause Tracking' : '▶️ Start Tracking'}
         </button>
+          <button className="btn btn-secondary ml-2" onClick={testNotification}>
+            Test Notification
+          </button>
         
         <button
           onClick={resetAllData}

@@ -9,7 +9,6 @@ export default function Settings() {
     idleThreshold: 5,
     notifications: true,
     soundAlerts: false,
-    darkMode: false,
     dataRetention: 30,
     excludedSites: [],
     dailyGoal: 8,
@@ -53,22 +52,10 @@ export default function Settings() {
     }
   }, []);
 
-  // Apply dark mode when settings load or change
-  useEffect(() => {
-    console.log('Applying dark mode on settings change:', settings.darkMode);
-    document.body.classList.toggle('dark', settings.darkMode);
-  }, [settings.darkMode]);
-
   // Save settings to Chrome storage
   const saveSettings = (newSettings) => {
     console.log('Saving settings:', newSettings);
     setSettings(newSettings);
-    
-    // Apply dark mode immediately for quick visual feedback
-    if (typeof newSettings.darkMode !== 'undefined') {
-      console.log('Applying dark mode:', newSettings.darkMode);
-      document.body.classList.toggle('dark', newSettings.darkMode);
-    }
     
     // Show saving indicator immediately
     setShowSuccess(true);
@@ -96,19 +83,10 @@ export default function Settings() {
     console.log('Toggle clicked:', key, 'Current value:', settings[key]);
     console.log('Chrome available:', typeof chrome !== 'undefined');
     console.log('Chrome storage available:', typeof chrome !== 'undefined' && chrome.storage);
-    console.log('Current body classes before toggle:', document.body.className);
     
     const newSettings = { ...settings, [key]: !settings[key] };
     console.log('New settings:', newSettings);
     saveSettings(newSettings);
-    
-    // Extra debug for dark mode
-    if (key === 'darkMode') {
-      console.log('Dark mode specific debug:');
-      console.log('- New dark mode value:', newSettings.darkMode);
-      console.log('- Body classes after saveSettings:', document.body.className);
-      console.log('- Body has dark class:', document.body.classList.contains('dark'));
-    }
   };
 
   // Handle input changes
@@ -146,7 +124,6 @@ export default function Settings() {
       idleThreshold: 5,
       notifications: true,
       soundAlerts: false,
-      darkMode: false,
       dataRetention: 30,
       excludedSites: [],
       dailyGoal: 8,
@@ -159,9 +136,9 @@ export default function Settings() {
   };
 
   return (
-    <div className="w-full h-auto overflow-y-auto p-1 font-sans text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800">
+    <div className="w-full h-auto overflow-y-auto p-1 font-sans text-xs text-gray-900 bg-white">
       {/* Header */}
-      <div className="mb-1 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 pb-0.5 border-b border-gray-200 dark:border-gray-600">
+      <div className="mb-1 flex items-center justify-between sticky top-0 bg-white pb-0.5 border-b border-gray-200">
         <div className="flex items-center space-x-1">
           <Link
             to="/home"
@@ -278,49 +255,9 @@ export default function Settings() {
           </div>
         </section>
 
-        {/* Appearance */}
-        <section>
-          <h2 className="text-base font-semibold mb-1 text-gray-800 dark:text-gray-200">🎨 Appearance</h2>
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <label className="text-xs">Dark mode</label>
-              <button
-                onClick={() => handleToggle('darkMode')}
-                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1 ${
-                  settings.darkMode ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
-              >
-                <span
-                  className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                    settings.darkMode ? 'translate-x-5' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-            
-            {/* Manual Test Button */}
-            <div className="flex items-center justify-between">
-              <label className="text-xs">Manual Test</label>
-              <button
-                onClick={() => {
-                  console.log('Manual dark mode test clicked');
-                  const isDark = document.body.classList.contains('dark');
-                  console.log('Current body classes:', document.body.className);
-                  console.log('Is currently dark:', isDark);
-                  document.body.classList.toggle('dark');
-                  console.log('After toggle:', document.body.className);
-                }}
-                className="px-2 py-0.5 bg-gray-600 text-white rounded text-xs hover:bg-gray-700"
-              >
-                Test Dark
-              </button>
-            </div>
-          </div>
-        </section>
-
         {/* Privacy & Data */}
         <section>
-          <h2 className="text-base font-semibold mb-1 text-gray-800 dark:text-gray-200">🔒 Privacy & Data</h2>
+          <h2 className="text-base font-semibold mb-1 text-gray-800">🔒 Privacy & Data</h2>
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="text-xs">Privacy mode</label>
