@@ -5,24 +5,6 @@ export default function Home() {
 
   const [websites, setWebsites] = useState([]);
   const [hostname, setHostname] = useState("");
-    function testNotification() {
-      if (window.chrome && chrome.notifications) {
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: 'icons/icon-48.png',
-          title: 'Chronix Test Notification',
-          message: 'This is a test notification from the popup.'
-        }, (id) => {
-          if (chrome.runtime.lastError) {
-            alert('Notification error: ' + chrome.runtime.lastError.message);
-          } else {
-            alert('Notification sent!');
-          }
-        });
-      } else {
-        alert('chrome.notifications API not available.');
-      }
-    }
 
     React.useEffect(() => {
       if (window.chrome && chrome.runtime && chrome.notifications) {
@@ -218,9 +200,7 @@ export default function Home() {
         >
           {settings.trackingEnabled ? '⏸️ Pause Tracking' : '▶️ Start Tracking'}
         </button>
-          <button className="btn btn-secondary ml-2" onClick={testNotification}>
-            Test Notification
-          </button>
+          {/* Test Notification button removed */}
         
         <button
           onClick={resetAllData}

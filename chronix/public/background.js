@@ -133,85 +133,70 @@ function showDailyGoalNotification() {
   }
 }
 
-// Show break reminder notification
+// Show break reminder notification directly from service worker
 function showBreakReminderNotification() {
-  console.log('showBreakReminderNotification called');
-  console.log('Chrome notifications available:', !!chrome.notifications);
-  console.log('Settings - notifications:', settings.notifications);
-  console.log('Settings - breakReminder:', settings.breakReminder);
-  
-  // Send a message to all extension views (popups)
-  chrome.runtime.sendMessage({
-    type: 'BREAK_REMINDER',
-    interval: settings.breakInterval
+  if (!chrome.notifications) {
+    console.warn('Notifications API unavailable');
+    return;
+  }
+  if (!settings.notifications || !settings.breakReminder) {
+    console.log('Notifications or breakReminder disabled in settings');
+    return;
+  }
+  chrome.notifications.create({
+    type: 'basic',
+    iconUrl: 'icons/icon-48.png',
+    title: 'Chronix - Time for a Break!',
+    message: `You've been working for ${settings.breakInterval} minutes. Consider taking a break!`,
+    requireInteraction: true
+  }, (notificationId) => {
+    if (chrome.runtime.lastError) {
+      console.error('Notification error:', chrome.runtime.lastError);
+    } else {
+      console.log('Break reminder notification sent with ID:', notificationId);
+    }
   });
-  console.log('Break reminder message sent to popup');
 }
 
-// Break reminder tracking
-let breakReminderStartTime = Date.now();
-let breakReminderInterval = null;
+// Break reminder via chrome.alarms
+const BREAK_ALARM_NAME = 'chronix_break_alarm';
 
-// Start break reminder timer
-function startBreakReminderTimer() {
-  if (breakReminderInterval) {
-    clearInterval(breakReminderInterval);
+function scheduleBreakReminderAlarm() {
+  if (!settings.breakReminder || !settings.notifications) {
+    console.log('Not scheduling alarm: breakReminder or notifications disabled');
+    return;
   }
-
-  if (settings.breakReminder && settings.notifications) {
-    console.log('Starting break reminder timer for', settings.breakInterval, 'minutes');
-    console.log('Break reminder enabled:', settings.breakReminder);
-    console.log('Notifications enabled:', settings.notifications);
-    breakReminderStartTime = Date.now();
-    
-    // For testing: if break interval is 1 minute, check every 10 seconds and use seconds
-    const isTestMode = settings.breakInterval <= 1;
-    const checkInterval = isTestMode ? 10000 : 60000; // 10 seconds vs 1 minute
-    
-    console.log('Test mode:', isTestMode, '- Check interval:', checkInterval / 1000, 'seconds');
-    
-    let checkCount = 0;
-    breakReminderInterval = setInterval(() => {
-      const now = Date.now();
-      let timeElapsed, targetTime, unit;
-      checkCount++;
-      if (isTestMode) {
-        // Test mode: work in seconds
-        timeElapsed = Math.floor((now - breakReminderStartTime) / 1000); // in seconds
-        targetTime = settings.breakInterval * 60; // convert minutes to seconds
-        unit = 'seconds';
-      } else {
-        // Normal mode: work in minutes
-        timeElapsed = Math.floor((now - breakReminderStartTime) / (1000 * 60)); // in minutes
-        targetTime = settings.breakInterval;
-        unit = 'minutes';
-      }
-      console.log(`Break reminder check #${checkCount} - Time elapsed: ${timeElapsed} ${unit}, Target: ${targetTime} ${unit}`);
-      if (checkCount === 2) {
-        console.log('Force test notification after 20 seconds');
-        showBreakReminderNotification();
-      }
-      if (timeElapsed >= targetTime) {
-        console.log('Break reminder triggered! Showing notification...');
-        showBreakReminderNotification();
-        breakReminderStartTime = now; // Reset timer
-      }
-    }, checkInterval);
-  } else {
-    console.log('Break reminder not started - breakReminder:', settings.breakReminder, 'notifications:', settings.notifications);
+  if (!(activeTab?.domain) || !settings.trackingEnabled || isUserIdle || isExcludedSite(activeTab.domain)) {
+    console.log('Not scheduling alarm: tracking inactive/idle/excluded');
+    return;
   }
+  // Clear any existing alarm, then schedule a new one
+  chrome.alarms.clear(BREAK_ALARM_NAME, () => {
+    const delay = Math.max(1, Number(settings.breakInterval) || 1); // chrome minimum is 1 minute
+    chrome.alarms.create(BREAK_ALARM_NAME, { delayInMinutes: delay });
+    console.log('Scheduled break reminder alarm in', delay, 'minute(s)');
+  });
 }
 
-// Stop break reminder timer
-function stopBreakReminderTimer() {
-  if (breakReminderInterval) {
-    clearInterval(breakReminderInterval);
-    breakReminderInterval = null;
-    console.log('Break reminder timer stopped (stopBreakReminderTimer called)');
-  } else {
-    console.log('Break reminder timer stop requested, but no timer was running');
-  }
+function clearBreakReminderAlarm() {
+  chrome.alarms.clear(BREAK_ALARM_NAME, (wasCleared) => {
+    console.log('Break reminder alarm cleared:', wasCleared);
+  });
 }
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === BREAK_ALARM_NAME) {
+    console.log('Break alarm fired');
+    // Only notify if still actively tracking and not idle
+    if (activeTab?.domain && settings.trackingEnabled && !isUserIdle && !isExcludedSite(activeTab.domain)) {
+      showBreakReminderNotification();
+      // Reschedule next reminder
+      scheduleBreakReminderAlarm();
+    } else {
+      console.log('Alarm fired but conditions not met; not notifying');
+    }
+  }
+});
 
 // NEW: Get current session time without saving it
 function getCurrentSessionTime() {
@@ -260,7 +245,7 @@ function startContinuousTracking() {
 
   // Start break reminder timer if enabled
   if (settings.breakReminder) {
-    startBreakReminderTimer();
+    scheduleBreakReminderAlarm();
   }
 }
 
@@ -271,7 +256,7 @@ function stopContinuousTracking() {
   }
   
   // Stop break reminder timer
-  stopBreakReminderTimer();
+  clearBreakReminderAlarm();
 }
 
 // Initialize tracking for current active tab
