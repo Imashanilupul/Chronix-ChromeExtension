@@ -1,9 +1,83 @@
 let activeTab = null;
 let startTime = Date.now();
 let continuousInterval = null;
+let settings = {
+  trackingEnabled: true,
+  autoStart: true,
+  idleThreshold: 5,
+  notifications: true,
+  soundAlerts: false,
+  dataRetention: 30,
+  excludedSites: [],
+  dailyGoal: 8,
+  breakReminder: true,
+  breakInterval: 60,
+  privacyMode: false,
+  syncData: true
+};
+let lastActivityTime = Date.now();
+let isUserIdle = false;
+
+// Load settings from Chrome storage
+async function loadSettings() {
+  return new Promise((resolve) => {
+    try {
+      chrome.storage.sync.get(['chronixSettings'], (result) => {
+        console.log('Background: Loading settings:', result);
+        if (result.chronixSettings) {
+          settings = { ...settings, ...result.chronixSettings };
+          console.log('Background: Settings loaded:', settings);
+        } else {
+          console.log('Background: No settings found, using defaults');
+        }
+        resolve(settings);
+      });
+    } catch (error) {
+      console.error('Background: Error loading settings:', error);
+      resolve(settings);
+    }
+  });
+}
+
+// Check if a domain should be excluded from tracking
+function isExcludedSite(domain) {
+  return settings.excludedSites.some(excludedSite => 
+    domain.includes(excludedSite) || excludedSite.includes(domain)
+  );
+}
+
+// Check if user is idle based on threshold
+function checkIdleStatus() {
+  const now = Date.now();
+  const idleThresholdMs = settings.idleThreshold * 60 * 1000; // Convert minutes to milliseconds
+  
+  if (now - lastActivityTime > idleThresholdMs && !isUserIdle) {
+    isUserIdle = true;
+    // Stop tracking when user becomes idle
+    if (activeTab?.domain) {
+      saveCurrentSession();
+    }
+  } else if (now - lastActivityTime <= idleThresholdMs && isUserIdle) {
+    isUserIdle = false;
+    // Resume tracking when user becomes active again
+    if (activeTab?.domain && settings.trackingEnabled && !isExcludedSite(activeTab.domain)) {
+      startTime = now;
+    }
+  }
+}
+
+// Update activity timestamp
+function updateActivity() {
+  lastActivityTime = Date.now();
+}
 
 // Called when tab is switched or closed
 function saveTime(domain, timeSpent) {
+  // Don't save if tracking is disabled or site is excluded
+  if (!settings.trackingEnabled || isExcludedSite(domain) || timeSpent <= 0) {
+    return;
+  }
+
   const today = new Date().toISOString().split("T")[0]; // "2025-07-14"
 
   chrome.storage.local.get(["usage"], (result) => {
@@ -19,10 +93,110 @@ function saveTime(domain, timeSpent) {
       updatedData[domain] = usage[today][domain]; // Store current day's time at root level
       updatedData.usage = usage; // Keep the nested structure too
       
-      chrome.storage.local.set(updatedData);
+      chrome.storage.local.set(updatedData, () => {
+        // Send notification if enabled and daily goal reached
+        if (settings.notifications && checkDailyGoal(usage[today])) {
+          showDailyGoalNotification();
+        }
+      });
     });
   });
 }
+
+// Save current session without ending it
+function saveCurrentSession() {
+  if (activeTab?.domain && startTime && !isUserIdle) {
+    const now = Date.now();
+    const timeSpent = Math.floor((now - startTime) / 1000);
+    if (timeSpent > 0) {
+      saveTime(activeTab.domain, timeSpent);
+      startTime = now; // Reset start time for continuous tracking
+    }
+  }
+}
+
+// Check if daily goal is reached
+function checkDailyGoal(todayUsage) {
+  const totalHours = Object.values(todayUsage).reduce((acc, seconds) => acc + seconds, 0) / 3600;
+  return totalHours >= settings.dailyGoal;
+}
+
+// Show daily goal notification
+function showDailyGoalNotification() {
+  if (chrome.notifications) {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icons/icon-48.png',
+      title: 'Chronix - Daily Goal Reached!',
+      message: `You've reached your daily goal of ${settings.dailyGoal} hours!`
+    });
+  }
+}
+
+// Show break reminder notification directly from service worker
+function showBreakReminderNotification() {
+  if (!chrome.notifications) {
+    console.warn('Notifications API unavailable');
+    return;
+  }
+  if (!settings.notifications || !settings.breakReminder) {
+    console.log('Notifications or breakReminder disabled in settings');
+    return;
+  }
+  chrome.notifications.create({
+    type: 'basic',
+    iconUrl: 'icons/icon-48.png',
+    title: 'Chronix - Time for a Break!',
+    message: `You've been working for ${settings.breakInterval} minutes. Consider taking a break!`,
+    requireInteraction: true
+  }, (notificationId) => {
+    if (chrome.runtime.lastError) {
+      console.error('Notification error:', chrome.runtime.lastError);
+    } else {
+      console.log('Break reminder notification sent with ID:', notificationId);
+    }
+  });
+}
+
+// Break reminder via chrome.alarms
+const BREAK_ALARM_NAME = 'chronix_break_alarm';
+
+function scheduleBreakReminderAlarm() {
+  if (!settings.breakReminder || !settings.notifications) {
+    console.log('Not scheduling alarm: breakReminder or notifications disabled');
+    return;
+  }
+  if (!(activeTab?.domain) || !settings.trackingEnabled || isUserIdle || isExcludedSite(activeTab.domain)) {
+    console.log('Not scheduling alarm: tracking inactive/idle/excluded');
+    return;
+  }
+  // Clear any existing alarm, then schedule a new one
+  chrome.alarms.clear(BREAK_ALARM_NAME, () => {
+    const delay = Math.max(1, Number(settings.breakInterval) || 1); // chrome minimum is 1 minute
+    chrome.alarms.create(BREAK_ALARM_NAME, { delayInMinutes: delay });
+    console.log('Scheduled break reminder alarm in', delay, 'minute(s)');
+  });
+}
+
+function clearBreakReminderAlarm() {
+  chrome.alarms.clear(BREAK_ALARM_NAME, (wasCleared) => {
+    console.log('Break reminder alarm cleared:', wasCleared);
+  });
+}
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === BREAK_ALARM_NAME) {
+    console.log('Break alarm fired');
+    // Only notify if still actively tracking and not idle
+    if (activeTab?.domain && settings.trackingEnabled && !isUserIdle && !isExcludedSite(activeTab.domain)) {
+      showBreakReminderNotification();
+      // Reschedule next reminder
+      scheduleBreakReminderAlarm();
+    } else {
+      console.log('Alarm fired but conditions not met; not notifying');
+    }
+  }
+});
 
 // NEW: Get current session time without saving it
 function getCurrentSessionTime() {
@@ -37,6 +211,14 @@ function getCurrentSessionTime() {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "getCurrentSessionTime") {
     sendResponse({ currentSessionTime: getCurrentSessionTime() });
+  } else if (request.action === "getSettings") {
+    sendResponse({ settings: settings });
+  } else if (request.action === "getTrackingStatus") {
+    sendResponse({ 
+      isTracking: activeTab !== null && settings.trackingEnabled,
+      activeTab: activeTab,
+      isIdle: isUserIdle
+    });
   }
 });
 
@@ -47,16 +229,24 @@ function startContinuousTracking() {
   }
 
   continuousInterval = setInterval(() => {
-    if (activeTab?.domain && startTime) {
+    // Check idle status
+    checkIdleStatus();
+    
+    if (activeTab?.domain && startTime && !isUserIdle && settings.trackingEnabled && !isExcludedSite(activeTab.domain)) {
       const now = Date.now();
       const timeSpent = Math.floor((now - startTime) / 1000);
       
-      if (timeSpent > 0) {
-        saveTime(activeTab.domain, timeSpent);
-        startTime = now; // Reset start time to avoid double counting
+      if (timeSpent >= 1) { // Only update if at least 1 second has passed
+        saveTime(activeTab.domain, 1); // Save 1 second increments
+        startTime = now; // Reset start time
       }
     }
-  }, 1000); // Update every second
+  }, 1000);
+
+  // Start break reminder timer if enabled
+  if (settings.breakReminder) {
+    scheduleBreakReminderAlarm();
+  }
 }
 
 function stopContinuousTracking() {
@@ -64,6 +254,9 @@ function stopContinuousTracking() {
     clearInterval(continuousInterval);
     continuousInterval = null;
   }
+  
+  // Stop break reminder timer
+  clearBreakReminderAlarm();
 }
 
 // Initialize tracking for current active tab
@@ -91,9 +284,10 @@ chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
 
 function handleTabSwitch(tab) {
   const now = Date.now();
+  updateActivity(); // Update activity timestamp
   
   // Save time for previous tab
-  if (activeTab?.domain && startTime) {
+  if (activeTab?.domain && startTime && settings.trackingEnabled && !isExcludedSite(activeTab.domain)) {
     const timeSpent = Math.floor((now - startTime) / 1000);
     if (timeSpent > 0) {
       saveTime(activeTab.domain, timeSpent);
@@ -102,13 +296,20 @@ function handleTabSwitch(tab) {
 
   try {
     const url = new URL(tab.url);
-    activeTab = {
-      domain: url.hostname,
-    };
-    startTime = now;
+    const domain = url.hostname;
     
-    // Start continuous tracking for new tab
-    startContinuousTracking();
+    // Only start tracking if enabled and site not excluded
+    if (settings.trackingEnabled && !isExcludedSite(domain)) {
+      activeTab = { domain };
+      startTime = now;
+      isUserIdle = false; // Reset idle status on tab switch
+      
+      // Start continuous tracking for new tab
+      startContinuousTracking();
+    } else {
+      activeTab = null;
+      stopContinuousTracking();
+    }
   } catch (e) {
     activeTab = null;
     stopContinuousTracking();
@@ -137,7 +338,9 @@ chrome.runtime.onStartup.addListener(() => {
     const todayUsage = usage[today] || {};
     
     // Copy today's usage to root level
-    chrome.storage.local.set(todayUsage, () => {
+    chrome.storage.local.set(todayUsage, async () => {
+      // Load settings before starting tracking
+      await loadSettings();
       // Start tracking after initialization
       initializeTracking();
     });
@@ -152,12 +355,49 @@ chrome.runtime.onInstalled.addListener(() => {
     const todayUsage = usage[today] || {};
     
     // Copy today's usage to root level
-    chrome.storage.local.set(todayUsage, () => {
+    chrome.storage.local.set(todayUsage, async () => {
+      // Load settings before starting tracking
+      await loadSettings();
       // Start tracking after initialization
       initializeTracking();
     });
   });
 });
+
+// Listen for settings changes
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  console.log('Background: Storage changed:', changes, areaName);
+  if (areaName === 'sync' && changes.chronixSettings) {
+    console.log('Background: Settings changed from:', settings);
+    settings = { ...settings, ...changes.chronixSettings.newValue };
+    console.log('Background: Settings changed to:', settings);
+    
+    // If tracking was disabled, stop current tracking
+    if (!settings.trackingEnabled) {
+      console.log('Background: Tracking disabled, stopping...');
+      if (activeTab?.domain && startTime) {
+        const now = Date.now();
+        const timeSpent = Math.floor((now - startTime) / 1000);
+        saveTime(activeTab.domain, timeSpent);
+      }
+      activeTab = null;
+      stopContinuousTracking();
+    }
+    // If tracking was enabled and auto-start is on, resume tracking
+    else if (settings.trackingEnabled && settings.autoStart) {
+      console.log('Background: Tracking enabled, resuming...');
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+          handleTabSwitch(tabs[0]);
+        }
+      });
+    }
+  }
+});
+
+// Listen for user activity (mouse movement, keyboard input)
+chrome.tabs.onActivated.addListener(() => updateActivity());
+chrome.tabs.onUpdated.addListener(() => updateActivity());
 
 // IMPORTANT: Start tracking immediately when service worker starts
 // This handles the case when the extension is already installed and browser starts

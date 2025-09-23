@@ -5,10 +5,54 @@ export default function Home() {
 
   const [websites, setWebsites] = useState([]);
   const [hostname, setHostname] = useState("");
+
+    React.useEffect(() => {
+      if (window.chrome && chrome.runtime && chrome.notifications) {
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+          if (message.type === 'BREAK_REMINDER') {
+            chrome.notifications.create({
+              type: 'basic',
+              iconUrl: 'icons/icon-48.png',
+              title: 'Chronix - Time for a Break!',
+              message: `You've been working for ${message.interval} minutes. Consider taking a break!`
+            }, (id) => {
+              if (chrome.runtime.lastError) {
+                alert('Notification error: ' + chrome.runtime.lastError.message);
+              } else {
+                console.log('Break reminder notification sent from popup!');
+              }
+            });
+          }
+        });
+      }
+    }, []);
   const [activeTabStartTime, setActiveTabStartTime] = useState(null);
+  const [trackingStatus, setTrackingStatus] = useState({
+    isTracking: false,
+    activeTab: null,
+    isIdle: false
+  });
+  const [settings, setSettings] = useState({
+    trackingEnabled: true,
+    excludedSites: []
+  });
 
   useEffect(() => {
     const updateData = () => {
+      // Get tracking status
+      chrome.runtime.sendMessage({action: "getTrackingStatus"}, (response) => {
+        if (response) {
+          setTrackingStatus(response);
+        }
+      });
+
+      // Get settings
+      chrome.runtime.sendMessage({action: "getSettings"}, (response) => {
+        if (response) {
+          setSettings(response.settings);
+        }
+      });
+
       chrome.storage.local.get(null, (data) => {
         chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
           if (!tab || !tab.url) return;
@@ -78,6 +122,11 @@ export default function Home() {
     });
   };
 
+  const toggleTracking = () => {
+    const newSettings = { ...settings, trackingEnabled: !settings.trackingEnabled };
+    chrome.storage.sync.set({ chronixSettings: newSettings });
+  };
+
   const formatTime = (seconds) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -89,74 +138,116 @@ export default function Home() {
   const activeSite = websites.find((site) => site.isActive);
 
   return (
-    <div className="w-80 h-auto p-4 font-sans text-sm text-gray-800 overflow-hidden">
+    <div className="w-full h-auto p-5 font-sans text-sm text-gray-800 overflow-hidden bg-white">
       {/* Header */}
       <div className="mb-4">
-        <h2 className="text-xl font-bold mb-0">⏱ Chronix</h2>
-        <p className="text-xs text-gray-500">Active Time Tracker</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold mb-1 text-gray-900">⏱ Chronix</h2>
+            <p className="text-sm text-gray-500">Active Time Tracker</p>
+          </div>
+          <div className="text-right">
+            <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+              settings.trackingEnabled && trackingStatus.isTracking 
+                ? 'bg-green-100 text-green-700' 
+                : settings.trackingEnabled && trackingStatus.isIdle
+                ? 'bg-yellow-100 text-yellow-700'
+                : 'bg-red-100 text-red-700'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${
+                settings.trackingEnabled && trackingStatus.isTracking 
+                  ? 'bg-green-500' 
+                  : settings.trackingEnabled && trackingStatus.isIdle
+                  ? 'bg-yellow-500'
+                  : 'bg-red-500'
+              }`}></div>
+              {settings.trackingEnabled && trackingStatus.isTracking 
+                ? 'Tracking' 
+                : settings.trackingEnabled && trackingStatus.isIdle
+                ? 'Idle'
+                : 'Disabled'
+              }
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Active Website Card */}
       {activeSite && (
-        <div className="border border-gray-300 p-3 rounded-md mb-4">
-          <div className="flex items-center gap-2">
+        <div className="border border-gray-300 p-4 rounded-lg mb-4 bg-gray-50">
+          <div className="flex items-center gap-2 mb-2">
             <img src={activeSite.favicon} alt="" className="w-4 h-4" />
-            <strong>{activeSite.domain}</strong>
+            <strong className="text-base">{activeSite.domain}</strong>
+            {settings.excludedSites?.includes(activeSite.domain) && (
+              <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">Excluded</span>
+            )}
           </div>
-          <div className="mt-2 text-gray-700">
-            Time Spent: {formatTime(activeSite.timeSpent)}
+          <div className="text-gray-700">
+            Time Spent: <span className="font-medium">{formatTime(activeSite.timeSpent)}</span>
           </div>
         </div>
       )}
 
-      {/* Reset Button */}
-      <button
-  onClick={resetAllData}
-  className="w-full flex items-center justify-center gap-2 py-2 px-4 mb-4 bg-blue-600 text-white text-base font-medium rounded-xl shadow-md hover:bg-blue-700 transition duration-200 ease-in-out"
->
-  🔄 <span>Reset Data</span>
-</button>
+      {/* Control Buttons */}
+      <div className="mb-6 space-y-3">
+        <button
+          onClick={toggleTracking}
+          className={`w-full flex items-center justify-center gap-2 py-3 px-4 text-base font-medium rounded-xl shadow-md transition duration-200 ease-in-out ${
+            settings.trackingEnabled 
+              ? 'bg-red-600 text-white hover:bg-red-700' 
+              : 'bg-green-600 text-white hover:bg-green-700'
+          }`}
+        >
+          {settings.trackingEnabled ? '⏸️ Pause Tracking' : '▶️ Start Tracking'}
+        </button>
+          {/* Test Notification button removed */}
+        
+        <button
+          onClick={resetAllData}
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 text-white text-base font-medium rounded-xl shadow-md hover:bg-blue-700 transition duration-200 ease-in-out"
+        >
+          🔄 <span>Reset Data</span>
+        </button>
+      </div>
 
 
       {/* Stats */}
-      <div className="mb-4 space-y-1">
-        <div>
-          <strong>Total Time Today:</strong> {formatTime(totalTime)}
+      <div className="mb-4 space-y-2">
+        <div className="text-base">
+          <strong>Total Time Today:</strong> <span className="text-blue-600 font-medium">{formatTime(totalTime)}</span>
         </div>
-        <div>
-          <strong>Sites Visited:</strong> {websites.length}
+        <div className="text-base">
+          <strong>Sites Visited:</strong> <span className="text-blue-600 font-medium">{websites.length}</span>
         </div>
       </div>
 
       {/* Website List */}
-      <div className="h-auto overflow-y-auto mb-3 space-y-2">
+      <div className="max-h-32 overflow-y-auto mb-4 space-y-2">
         {websites
           .sort((a, b) => b.timeSpent - a.timeSpent)
           .map((site) => (
             <div
               key={site.domain}
-              className={`flex justify-between items-center px-2 py-1 rounded-md ${site.isActive ? "bg-blue-100" : "bg-gray-100"
+              className={`flex justify-between items-center px-3 py-2 rounded-lg ${site.isActive ? "bg-blue-100 border border-blue-200" : "bg-gray-100"
                 }`}
             >
               <div className="flex items-center gap-2">
-                <img src={site.favicon} alt="" className="w-3 h-3" />
-                <span className="text-xs">{site.domain}</span>
+                <img src={site.favicon} alt="" className="w-4 h-4" />
+                <span className="text-sm font-medium">{site.domain}</span>
               </div>
-              <span className="text-xs">{formatTime(site.timeSpent)}</span>
+              <span className="text-sm text-gray-600 font-medium">{formatTime(site.timeSpent)}</span>
             </div>
           ))}
       </div>
 
       {/* Footer Links */}
-      <div className="flex justify-between text-xs text-blue-600">
-
-        <Link to="/graphs" className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 rounded hover:bg-blue-50 hover:underline transition">
+      <div className="flex justify-between gap-2 mt-4">
+        <Link to="/graphs" className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 hover:underline transition">
           📊 View Graphs
         </Link>
-        <Link to="/settings" className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 rounded hover:bg-gray-100 hover:underline transition">
+        <Link to="/settings" className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 hover:underline transition">
           ⚙️ Settings
         </Link>
-
       </div>
     </div>
   );
