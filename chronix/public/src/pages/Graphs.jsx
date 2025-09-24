@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Bar } from 'react-chartjs-2';
+import { Bar, Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
+import { forecastNextDay } from '../utils/aiForecast';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend);
 
 export default function Graphs() {
 
@@ -19,6 +22,9 @@ export default function Graphs() {
   const [period, setPeriod] = useState('weekly');
   const [selectedDomain, setSelectedDomain] = useState('');
   const [chartData, setChartData] = useState(null);
+  const [forecastData, setForecastData] = useState(null);
+  const [forecastLoading, setForecastLoading] = useState(false);
+  const [showForecast, setShowForecast] = useState(false);
 
   // Fetch usage data on mount
   useEffect(() => {
@@ -104,7 +110,24 @@ export default function Graphs() {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  };
 
+  // Load AI forecast
+  const loadForecast = async () => {
+    setForecastLoading(true);
+    try {
+      const result = await forecastNextDay();
+      setForecastData(result);
+      console.log('Forecast result:', result);
+    } catch (error) {
+      console.error('Forecast error:', error);
+      setForecastData({
+        success: false,
+        error: 'forecast_failed',
+        message: error.message
+      });
+    }
+    setForecastLoading(false);
   };
 
   const total =
@@ -170,23 +193,27 @@ export default function Graphs() {
     }, {})
   );
   return (
-    <div className="w-80 h-auto p-4 font-sans text-sm text-gray-900 bg-white border border-gray-300 rounded-lg shadow">
+    <div className="w-full h-auto p-5 font-sans text-sm text-gray-800 overflow-hidden bg-white">
       {/* Header */}
-      <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-xl font-bold">📊 Analytics</h2>
-
-        <Link to="/home" className="text-blue-400 hover:underline text-lg">
-          ⬅️
-        </Link>
+      <div className="mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold mb-1 text-gray-900">📊 Analytics</h2>
+            <p className="text-sm text-gray-500">Usage Insights & AI Predictions</p>
+          </div>
+          <div className="text-right">
+            <Link to="/home" className="text-blue-600 hover:text-blue-800 text-lg">
+              ⬅️
+            </Link>
+          </div>
+        </div>
       </div>
 
       {/* Select Domain */}
       <div className="mb-4">
-        <label className="block text-xs mb-1">Select Website:</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Select Website:</label>
         <select
-
-          className="w-full p-2 bg-white border border-gray-300 rounded text-gray-800"
-
+          className="w-full p-3 bg-white border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           value={selectedDomain}
           onChange={(e) => setSelectedDomain(e.target.value)}
         >
@@ -203,61 +230,141 @@ export default function Graphs() {
       </div>
 
       {/* Period Selector */}
-      <div className="mb-4 flex space-x-2">
-        <button
-
-          className={`flex-1 p-2 border rounded font-bold ${
-            period === 'weekly'
-              ? 'bg-blue-100 border-blue-400 text-blue-800'
-              : 'bg-gray-100 border-gray-300 text-gray-500'
-
-          }`}
-          onClick={() => setPeriod('weekly')}
-        >
-          Weekly
-        </button>
-        <button
-
-          className={`flex-1 p-2 border rounded font-bold ${
-            period === 'monthly'
-              ? 'bg-orange-100 border-orange-400 text-orange-800'
-              : 'bg-gray-100 border-gray-300 text-gray-500'
-
-          }`}
-          onClick={() => setPeriod('monthly')}
-        >
-          Monthly
-        </button>
+      <div className="mb-6 space-y-3">
+        <div className="flex space-x-3">
+          <button
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 text-base font-medium rounded-xl shadow-md transition duration-200 ease-in-out ${
+              period === 'weekly'
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+            onClick={() => setPeriod('weekly')}
+          >
+            📅 Weekly
+          </button>
+          <button
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 text-base font-medium rounded-xl shadow-md transition duration-200 ease-in-out ${
+              period === 'monthly'
+                ? 'bg-orange-600 text-white hover:bg-orange-700'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+            onClick={() => setPeriod('monthly')}
+          >
+            🗓️ Monthly
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="mb-4 flex space-x-2">
-
-        <div className="flex-1 p-2 bg-gray-100 border border-gray-300 rounded text-center">
-          <div className="text-xs">Total</div>
-          <div className="text-lg font-semibold">{formatTime(total)}</div>
+      <div className="mb-4 space-y-2">
+        <div className="text-base">
+          <strong>Total Time ({period}):</strong> <span className="text-blue-600 font-medium">{formatTime(total)}</span>
         </div>
-        <div className="flex-1 p-2 bg-gray-50 border border-gray-300 rounded text-center">
-          <div className="text-xs">Daily Avg</div>
-          <div className="text-lg font-semibold">{formatTime(avg)}</div>
+        <div className="text-base">
+          <strong>Daily Average:</strong> <span className="text-blue-600 font-medium">{formatTime(avg)}</span>
         </div>
       </div>
 
       {/* Chart */}
-      <div className="bg-gray-50 p-2 rounded border border-gray-200">
-        <div className="text-xs mb-1 text-gray-700">
-
-          {period === 'weekly' ? 'Last 7 Days' : 'Last 4 Weeks'}
+      <div className="border border-gray-300 p-4 rounded-lg mb-4 bg-gray-50">
+        <div className="text-sm font-medium text-gray-700 mb-3">
+          📊 {period === 'weekly' ? 'Last 7 Days' : 'Last 4 Weeks'} - {selectedDomain}
         </div>
         {chartData && allDomains.length > 0 ? (
-          <div style={{ height: '180px' }}>
+          <div style={{ height: '200px' }}>
             <Bar data={chartData} options={chartOptions} />
           </div>
         ) : (
-          <div className="h-32 flex items-center justify-center">
-            <p className="text-gray-900 text-xs">
-              {allDomains.length === 0 ? 'No data available yet' : 'Loading chart...'}
+          <div className="h-40 flex items-center justify-center">
+            <p className="text-gray-600 text-sm">
+              {allDomains.length === 0 ? 'No data available yet - start browsing to see your analytics!' : 'Loading chart...'}
             </p>
+          </div>
+        )}
+      </div>
+
+      {/* AI Forecast Section */}
+      <div className="mt-4 bg-gradient-to-r from-purple-50 to-blue-50 p-3 rounded border border-purple-200">
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-sm font-bold text-purple-800 flex items-center">
+            🤖 AI Forecast
+          </h3>
+          <button
+            onClick={() => setShowForecast(!showForecast)}
+            className="text-xs text-purple-600 hover:text-purple-800"
+          >
+            {showForecast ? 'Hide' : 'Show'}
+          </button>
+        </div>
+
+        {showForecast && (
+          <div>
+            {!forecastData ? (
+              <div className="text-center">
+                <button
+                  onClick={loadForecast}
+                  disabled={forecastLoading}
+                  className="px-4 py-2 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 disabled:opacity-50"
+                >
+                  {forecastLoading ? '🧠 Training AI...' : '🚀 Predict Tomorrow'}
+                </button>
+                <p className="text-xs text-gray-600 mt-1">
+                  Uses LSTM neural network to predict your total active time tomorrow
+                </p>
+              </div>
+            ) : forecastData.success ? (
+              <div>
+                <div className="bg-white p-3 rounded border border-purple-100 mb-2">
+                  <div className="text-center mb-2">
+                    <div className="text-lg font-bold text-purple-700">
+                      {formatTime(forecastData.forecast.minutes)}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      Predicted for {forecastData.nextDate}
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between text-xs text-gray-600 mb-2">
+                    <span>Range: {formatTime(forecastData.forecast.confidenceInterval.lower)} - {formatTime(forecastData.forecast.confidenceInterval.upper)}</span>
+                    <span>Confidence: {forecastData.forecast.confidence}%</span>
+                  </div>
+
+                  <div className="text-xs text-gray-500">
+                    Model: {forecastData.model.type || 'LSTM Neural Network'} • 
+                    Data: {forecastData.model.trainingSamples || forecastData.dailyData.length} days
+                  </div>
+                </div>
+
+                <div className="flex space-x-2">
+                  <button
+                    onClick={loadForecast}
+                    disabled={forecastLoading}
+                    className="flex-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded hover:bg-purple-200 disabled:opacity-50"
+                  >
+                    {forecastLoading ? 'Updating...' : 'Refresh'}
+                  </button>
+                  <button
+                    onClick={() => setForecastData(null)}
+                    className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded hover:bg-gray-200"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-red-50 p-2 rounded border border-red-200">
+                <div className="text-xs text-red-700 mb-1">
+                  ⚠️ {forecastData.message || 'Forecast failed'}
+                </div>
+                <button
+                  onClick={loadForecast}
+                  disabled={forecastLoading}
+                  className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200"
+                >
+                  Try Again
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
