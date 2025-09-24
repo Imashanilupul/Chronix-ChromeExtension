@@ -3,6 +3,14 @@
 **Version**: 2.0.0  
 A modern Chrome extension that tracks the time you spend browsing, helping you improve focus and productivity.
 
+## 📥 Installation
+
+**Get Chronix from the Chrome Web Store:**
+
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Available-brightgreen?style=for-the-badge&logo=googlechrome)](https://chromewebstore.google.com/detail/chronix/cognaagbiaopccnobhppnjpohjiclnlf)
+
+🔗 **Direct Link**: [Install Chronix Extension](https://chromewebstore.google.com/detail/chronix/cognaagbiaopccnobhppnjpohjiclnlf)
+
 ---
 
 ## 🚀 Features
@@ -173,7 +181,7 @@ Chronix-ChromeExtension/
 ## 🚀 Quick Start Guide
 
 ### **First Time Setup**
-1. Install the extension following the development setup instructions
+1. **Install the extension** from the [Chrome Web Store](https://chromewebstore.google.com/detail/chronix/cognaagbiaopccnobhppnjpohjiclnlf) or follow the development setup instructions below
 2. Click the Chronix icon in your Chrome toolbar
 3. The extension will automatically start tracking your browsing time
 4. Visit the Settings page to customize tracking preferences
